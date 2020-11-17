@@ -1,0 +1,218 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{9822D044-C912-4A46-A051-CA05A843D767}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>CrazyArcade</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>Crazy Arcade</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalOptions>msimg32.lib %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <LanguageStandard>Default</LanguageStandard>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>C:\Users\quswl\Desktop\2020 2학기\네트워크 게임 프로그래밍\TermProject\CrazyArcade;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\quswl\Desktop\2020 2학기\네트워크 게임 프로그래밍\TermProject\CrazyArcade;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalOptions>msimg32.lib %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>C:\Users\quswl\Desktop\2020 2학기\네트워크 게임 프로그래밍\TermProject\CrazyArcade;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Crazy Arcade.cpp" />
+    <ClCompile Include="SoundMgr.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Constant.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="SoundMgr.h" />
+    <ClInclude Include="stdafx.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Crazy Arcade.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\리소스\비트맵\01.Logo\55.bmp" />
+    <Image Include="..\..\리소스\비트맵\01.Logo\Logo_Bg.bmp" />
+    <Image Include="..\..\리소스\비트맵\01.Logo\Logo_Button_Start.bmp" />
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Item_CoolTime_E2.bmp" />
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Item_CoolTime_Q1.bmp" />
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Lobby_Bg1.bmp" />
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Lobby_Button_Start.bmp" />
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Lobby_EButton.bmp" />
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Lobby_EButton2.bmp" />
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Lobby_Image_Empty.bmp" />
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Lobby_Image_Map_0.bmp" />
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Lobby_Image_Map_1.bmp" />
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Lobby_QButton.bmp" />
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Lobby_QButton1.bmp" />
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Loddy_Image_SelectMap_0.bmp" />
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Loddy_Image_SelectMap_1.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Bubble\Bubble.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Bubble\BubbleFlow.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Character\Character1.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Character\Character2.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Character\Character_Bot.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Character\Character_Player.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\InGame_Bg.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\InGame_Button_Out.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\InGame_Image_Word.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Item\Item.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Item\P1_Niddle.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Item\P2_Niddle.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Map_1\Box_0_M1.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Map_1\Box_1_M1.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Map_1\Box_2_M1.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Map_1\House_0.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Map_1\House_1.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Map_1\House_2.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Map_1\Tile.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Map_1\Tree.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Map_2\Box_2.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Map_2\Box_3.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Map_2\Box_4.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Map_2\Tile.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Map_2\Tile_Map2.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Monster\Monster_Basic.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Monster\Monster_Normal.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Tile\Tile_1.bmp" />
+    <Image Include="..\..\리소스\비트맵\InGame\Tile\Tile_2.bmp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,181 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="소스 파일">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="헤더 파일">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="리소스 파일">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Crazy Arcade.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SoundMgr.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="resource.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Constant.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SoundMgr.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Crazy Arcade.rc">
+      <Filter>리소스 파일</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\리소스\비트맵\InGame\InGame_Bg.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Tile\Tile_1.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Tile\Tile_2.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Map_1\Box_0_M1.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Map_1\Box_1_M1.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Map_1\Box_2_M1.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Map_1\House_0.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Map_1\House_1.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Map_1\House_2.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Map_1\Tree.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Map_1\Tile.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Character\Character_Bot.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Character\Character_Player.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Character\Character1.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Character\Character2.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Bubble\Bubble.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Bubble\BubbleFlow.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\01.Logo\Logo_Bg.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\01.Logo\Logo_Button_Start.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Lobby_Button_Start.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Lobby_EButton.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Lobby_Image_Map_0.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Lobby_Image_Map_1.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Lobby_QButton.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Loddy_Image_SelectMap_0.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Loddy_Image_SelectMap_1.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Lobby_Bg1.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Lobby_EButton2.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Lobby_QButton1.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Item_CoolTime_E2.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Item_CoolTime_Q1.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\02.Lobby\Lobby_Image_Empty.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Item\Item.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Monster\Monster_Basic.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Monster\Monster_Normal.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Map_2\Tile_Map2.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Map_2\Tile.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Map_2\Box_2.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Map_2\Box_3.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Map_2\Box_4.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Item\P1_Niddle.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\Item\P2_Niddle.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\01.Logo\55.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\InGame_Button_Out.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="..\..\리소스\비트맵\InGame\InGame_Image_Word.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+  </ItemGroup>
+</Project>

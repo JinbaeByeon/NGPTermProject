@@ -1,5 +1,6 @@
 .vs/
 /CrazyArcade/x64
+/x64
 *.exe
 *.ilk
 *.pdb
