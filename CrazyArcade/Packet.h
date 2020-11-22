@@ -1,18 +1,17 @@
 #pragma once
-class Packet
+struct Packet
 {
-public:
 	int type;
 };
 
-class PlayerPacket : public Packet
+struct PlayerPacket : public Packet
 {
 	int idx_player;
 	int x, y;
 	unsigned short status;
 };
 
-class BubblePacket : public Packet
+struct BubblePacket : public Packet
 {
 	int power;
 	int x, y;

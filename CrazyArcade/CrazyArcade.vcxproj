@@ -154,7 +154,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Crazy Arcade.cpp" />
-    <ClCompile Include="Packet.cpp" />
     <ClCompile Include="SoundMgr.cpp" />
   </ItemGroup>
   <ItemGroup>
