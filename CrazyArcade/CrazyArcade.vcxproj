@@ -154,10 +154,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Crazy Arcade.cpp" />
+    <ClCompile Include="Packet.cpp" />
     <ClCompile Include="SoundMgr.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Constant.h" />
+    <ClInclude Include="Packet.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SoundMgr.h" />
     <ClInclude Include="stdafx.h" />
