@@ -161,6 +161,7 @@
   <ItemGroup>
     <ClInclude Include="Constant.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Socket_Programming.h" />
     <ClInclude Include="SoundMgr.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>

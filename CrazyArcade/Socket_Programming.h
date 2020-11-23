@@ -55,17 +55,13 @@ DWORD WINAPI RecvClient(LPVOID arg)
     retval = connect(sock, (SOCKADDR*)&serveraddr, sizeof(serveraddr));
 
     // 데이터 통신에 사용할 변수
-    SOCKET client_sock;
-    SOCKADDR_IN clientaddr;
-    int addrlen;
-    RECT rt;
 
     while (1) {
 
     }
 
     // closesocket()
-    closesocket(client_sock);
+    closesocket(sock);
 
     // 윈속 종료
     WSACleanup();
@@ -74,5 +70,6 @@ DWORD WINAPI RecvClient(LPVOID arg)
 
 DWORD WINAPI SendClient(LPVOID arg)
 {
-    WaitForSingleObject(hConnectEvent, INFINITE);
+    //WaitForSingleObject(hConnectEvent, INFINITE);
+    return 0;
 }

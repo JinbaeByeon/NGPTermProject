@@ -5,6 +5,7 @@
 #include <time.h>
 
 #include "SoundMgr.h"
+#include "Socket_Programming.h"
 HINSTANCE hInst;
 HWND hwnd;
 
@@ -55,6 +56,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 		NULL, NULL, hInstance, NULL);
 	ShowWindow(hwnd, nCmdShow);
 	UpdateWindow(hwnd);
+
+	// 이벤트 생성
+	hRecvEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if (hRecvEvent == NULL) return 1;
+	hPressEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if (hPressEvent == NULL) return 1;	
+	hConnectEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if (hConnectEvent == NULL) return 1;
+
+	// 소켓 통신 스레드 생성
+	CreateThread(NULL, 0, SendClient, NULL, 0, NULL);
+	CreateThread(NULL, 0, RecvClient, NULL, 0, NULL);
+
+
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
 		TranslateMessage(&msg);
@@ -2575,3 +2590,4 @@ void SetPos()
 	P1_PIN.left = 82, P1_PIN.top = 243, P1_PIN.right = P1_PIN.left + 33, P1_PIN.bottom = P1_PIN.top + 26;
 	P2_PIN.left = 268, P2_PIN.top = 243, P2_PIN.right = P2_PIN.left + 33, P2_PIN.bottom = P2_PIN.top + 26;
 }
+

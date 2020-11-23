@@ -1,5 +1,12 @@
 #pragma once
 
+// 서버 구성하기 위해 붙인 것
+#define _WINSOCK_DEPRECATED_NO_WARNINGS // 최신 VC++ 컴파일 시 경고 방지
+#define _CRT_SECURE_NO_WARNINGS
+#pragma comment(lib, "ws2_32")
+#include <winsock2.h>
+
+
 #include "fmod.h"
 #include "fmod.hpp"
 #include "fmod_dsp.h"
@@ -13,6 +20,7 @@
 #include <iostream>
 #include <algorithm>
 #include <io.h>
+
 
 using namespace std;
 using namespace FMOD;
