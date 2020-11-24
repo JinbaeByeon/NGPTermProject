@@ -5,6 +5,9 @@
 #define _CRT_SECURE_NO_WARNINGS
 #pragma comment(lib, "ws2_32")
 #include <winsock2.h>
+#ifdef _DEBUG
+#pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:console")
+#endif
 
 
 #include "fmod.h"

@@ -64,20 +64,28 @@ DWORD WINAPI RecvClient(LPVOID arg)
         MessageBox(hwnd, L"연결 안 됨", L"연결됨", MB_OK);
     else
         MessageBox(hwnd, L"연결됨", L"연결됨?", MB_OK);
-
+    
     // 커넥트 이후 자신의 플레이어 패킷 수신
     retval = recvn(sock, buf, sizeof(PlayerPacket), 0);
     SetEvent(hConnectEvent);    //connect가 끝나면 송신에서도 변수 사용가능하다는 이벤트 발생시킨다.
 
+    // 실험용
+    char experiment[BUFSIZE];
+
     // 데이터 통신에 쓰일 while, 이 위에 처음 서버와 연결했을 때의 패킷을 받아오는 작업 필요
     while (1) {
-        //if (GameState == 2) // 게임 스테이트가 메뉴일 때
-        //{
-        //    // 다른 플레이어가 접속한다면 받아온다.
-        //    retval = recvn(sock, buf, sizeof(PlayerPacket), 0);
-        //}
-        //else 
-            if (GameState == 3)
+        if (GameState == 2) // 게임 스테이트가 메뉴일 때
+        {
+            // 다른 플레이어가 접속한다면 받아온다.
+            retval = recvn(sock, buf, sizeof(PlayerPacket), 0);
+            buf[retval] = '\0';
+            MyPlayer_Packet = (PlayerPacket*)buf;
+            if (MyPlayer_Packet->idx_player == 3)
+            {
+                printf("Packet ID : %d\nPacket x : %d\nPacket y : %d\nPacket type : %d\n", MyPlayer_Packet->idx_player, MyPlayer_Packet->x, MyPlayer_Packet->y, MyPlayer_Packet->type);
+            }
+        }
+        else if (GameState == 3)
         {
             retval = recvn(sock, buf, sizeof(PlayerPacket), 0);
             buf[retval] = '\0';
@@ -98,6 +106,10 @@ DWORD WINAPI SendClient(LPVOID arg)
 {
     WaitForSingleObject(hConnectEvent, INFINITE);   // RecvClient에서 Connect 될 때까지 wait
     // 처음엔 로비 화면에서 클릭에 따라 전송, game state 가 ingame이면 break하는 형태
+    WaitForSingleObject(hSendEvent, INFINITE);
+    printf("ClientPacket Send Value : %d", client);
+    send(sock, (char*)&client, sizeof(Packet), 0);
+    ResetEvent(hSendEvent);
     if (GameState == 2)
     {
         while (1)

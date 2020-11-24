@@ -8,6 +8,7 @@
 #include "Socket_Programming.h"
 #include "Packet.h"
 
+
 HINSTANCE hInst;
 HWND hwnd;
 
@@ -39,9 +40,9 @@ SOCKET sock;
 // 불 값
 BOOL Ready_For_Start = false;
 // 패킷
-PlayerPacket MyPlayer_Packet;
-BubblePacket Bubble_Packet;
-ClientPacket Client_Packet;
+PlayerPacket *MyPlayer_Packet;
+BubblePacket *Bubble_Packet;
+Packet client;
 
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
@@ -79,13 +80,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 	if (hSendEvent == NULL) return 1;
 	hConnectEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	if (hConnectEvent == NULL) return 1;
-
-	// 패킷 구조체 초기화
-	MyPlayer_Packet.type = 0;
-	MyPlayer_Packet.idx_player = 1;
-	MyPlayer_Packet.status = 0;
-	MyPlayer_Packet.x = 0;
-	MyPlayer_Packet.y = 0;
 
 	// 소켓 통신 스레드 생성
 	CreateThread(NULL, 0, SendClient, NULL, 0, NULL);
@@ -291,6 +285,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM  lParam)
 		{
 			if (Collision(GameStart, M_X, M_Y))
 			{
+				client.type = input_left;
 				SetEvent(hSendEvent);
 				CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Button_Off.ogg");
 				CSoundMgr::GetInstance()->PlayEffectSound2(L"SFX_Word_Start.ogg");
@@ -2194,6 +2189,8 @@ void KEY_DOWN_P1(HWND hWnd)
 
 			if (GetAsyncKeyState(VK_DOWN) & 0x8000) {
 				yPos_P1 = DOWN;
+				client.type = input_bottom;
+				SetEvent(hSendEvent);
 				if (!P1_Move) {
 					SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
 					P1_Move = TRUE;

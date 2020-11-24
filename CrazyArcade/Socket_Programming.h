@@ -1,8 +1,8 @@
 #pragma once
 #include "stdafx.h"
 
-#define SERVERIP   "127.30.1.28"
-#define SERVERPORT 8000
+#define SERVERIP   "172.30.1.28"
+#define SERVERPORT 9000
 #define BUFSIZE	   4096
 
 
