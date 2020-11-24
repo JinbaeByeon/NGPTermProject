@@ -1,33 +1,35 @@
 #pragma once
 #include"stdafx.h"
 
-enum class CPacket : unsigned short
+#pragma once
+class Packet
 {
-	left = 1,
-	right = 2,
-	top = 4,
-	bottom = 8,
-	space = 16,
-	ctrl = 32,
-	dead = 64,
-	trapped = 128
-};
-
-struct Packet {
+public:
 	int type;
 };
 
-struct PlayerPacket {
-	int idx;
-	int x, y;
-	u_short status;
+class PlayerPacket : public Packet
+{
+public:
+	int idx_player = 0;
+	int x = 0, y = 0;
+	unsigned short status;
 };
 
-struct BubblePacket {
+class BubblePacket : public Packet
+{
+public:
 	int power;
 	int x, y;
 };
 
-struct StartPacket {
-	int x, y;
+enum ClientPacket {
+	input_left = 1,
+	input_right = 2,
+	input_top = 4,
+	input_bottom = 8,
+	input_space = 16,
+	input_ctrl = 32,
+	state_dead = 64,
+	state_trapped = 128,
 };

@@ -12,5 +12,5 @@
 #define FALSE 0
 
 #define SERVERPORT 9000
-#define BUFSIZE    128
+#define BUFSIZE    4096
 #define MAX_CLIENT 3
