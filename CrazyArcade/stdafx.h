@@ -28,7 +28,7 @@ using namespace FMOD;
 class CStringCmp
 {
 private:
-	const TCHAR*		m_pName;
+	const TCHAR* m_pName;
 
 public:
 	explicit CStringCmp(const TCHAR* pKey)
