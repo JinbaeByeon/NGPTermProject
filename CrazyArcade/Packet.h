@@ -1,4 +1,6 @@
 #pragma once
+
+// ¿Ãµø = 1, π∞«≥º± = 2
 struct Packet
 {
 	int type;
@@ -27,3 +29,4 @@ enum ClientPacket {
 	state_dead = 64,
 	state_trapped = 128,
 };
+
