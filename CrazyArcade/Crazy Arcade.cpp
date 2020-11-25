@@ -1431,10 +1431,12 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
 	WaitForSingleObject(hPlayerEvent, INFINITE);
 	Player1.left = Recv_Player_Packet->x;
-	Player1.bottom = Player1.left + Player_CX;
+	Player1.right = Player1.left + Player_CX;
 	Player1.top = Recv_Player_Packet->y;
 	Player1.bottom = Recv_Player_Packet->y + Player_CY;
-	ResetEvent(hPlayerEvent);
+	ResetEvent(hPlayerEvent);			
+	KillTimer(hwnd, P1);
+
 	//switch (yPos_P1) {
 	//case LEFT:
 	//	if (Player1.left >= StartX + 10) {
