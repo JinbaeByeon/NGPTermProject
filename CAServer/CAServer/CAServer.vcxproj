@@ -140,11 +140,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CClientPacket.cpp" />
+    <ClCompile Include="CMap.cpp" />
     <ClCompile Include="ServerFunc.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CClientPacket.h" />
+    <ClInclude Include="CMap.h" />
     <ClInclude Include="ServerFunc.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
