@@ -8,7 +8,7 @@ extern SOCKET sock;
 // 패킷
 extern PlayerPacket *Recv_Player_Packet;
 extern BubblePacket *Recv_Bubble_Packet;
-extern Packet Send_Client_Packet;
+extern enum ClientPacket Send_Client_Packet;
 Packet *Recv_Packet_Type;
 // 불값
 extern BOOL Bubble_Arrive, Player_Arrive;
@@ -45,8 +45,8 @@ int recvn(SOCKET s, char* buf, int len, int flags)
 // Receive를 수행할 스레드. 
 DWORD WINAPI RecvClient(LPVOID arg)
 {
-    Send_Client_Packet.type = state_dead;
-    printf("client.type : %d", Send_Client_Packet.type);
+    Send_Client_Packet = state_dead;
+    printf("client.type : %d", Send_Client_Packet);
     // 메뉴 -> 로비로 가기 전까지 기다린다.
     WaitForSingleObject(hRecvEvent, INFINITE);
     ResetEvent(hRecvEvent);
@@ -141,7 +141,7 @@ DWORD WINAPI SendClient(LPVOID arg)
     // 처음엔 로비 화면에서 클릭에 따라 전송, game state 가 ingame이면 break하는 형태
     WaitForSingleObject(hSendEvent, INFINITE);
     printf("ClientPacket Send Value : %d", Send_Client_Packet);
-    send(sock, (char*)&Send_Client_Packet, sizeof(Packet), 0);
+    send(sock, (char*)&Send_Client_Packet, sizeof(ClientPacket), 0);
     ResetEvent(hSendEvent);
     if (GameState == 2)
     {
@@ -159,7 +159,7 @@ DWORD WINAPI SendClient(LPVOID arg)
         while (1)
         {
             WaitForSingleObject(hSendEvent, INFINITE);
-            send(sock, (char*)&Send_Client_Packet, sizeof(Packet), 0);
+            send(sock, (char*)&Send_Client_Packet, sizeof(ClientPacket), 0);
             ResetEvent(hSendEvent);
         }
     }

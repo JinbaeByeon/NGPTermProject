@@ -42,7 +42,7 @@ BOOL Bubble_Arrive = false, Player_Arrive = false;
 // ÆÐÅ¶
 PlayerPacket *Recv_Player_Packet;
 BubblePacket *Recv_Bubble_Packet;
-Packet Send_Client_Packet;
+enum ClientPacket Send_Client_Packet;
 
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
@@ -289,7 +289,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM  lParam)
 		{
 			if (Collision(GameStart, M_X, M_Y))
 			{
-				Send_Client_Packet.type = input_left;
+				Send_Client_Packet = input_left;
 				SetEvent(hSendEvent);
 				CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Button_Off.ogg");
 				CSoundMgr::GetInstance()->PlayEffectSound2(L"SFX_Word_Start.ogg");
@@ -2189,7 +2189,7 @@ void KEY_DOWN_P1(HWND hWnd)
 	{
 		if (!P1_Die && P1_Live) {
 			if (GetAsyncKeyState(VK_CONTROL) & 0x8000 && P1_InBubble && P1_N) {
-				Send_Client_Packet.type = input_ctrl;
+				Send_Client_Packet = input_ctrl;
 				SetEvent(hSendEvent);
 				//P1_Speed = P1_tSpeed;
 				//P1_InBubble = FALSE;
@@ -2197,35 +2197,35 @@ void KEY_DOWN_P1(HWND hWnd)
 			}
 
 			if (GetAsyncKeyState(VK_DOWN) & 0x8000) {
-				Send_Client_Packet.type = input_bottom;
+				Send_Client_Packet = input_bottom;
 				SetEvent(hSendEvent);
 				yPos_P1 = DOWN;
 				SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
 				P1_Move = TRUE;
 			}
 			if (GetAsyncKeyState(VK_UP) & 0x8000) {
-				Send_Client_Packet.type = input_top;
+				Send_Client_Packet = input_top;
 				SetEvent(hSendEvent);
 				yPos_P1 = UP;
 				SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
 				P1_Move = TRUE;
 			}
 			if (GetAsyncKeyState(VK_LEFT) & 0x8000) {
-				Send_Client_Packet.type = input_left;
+				Send_Client_Packet = input_left;
 				SetEvent(hSendEvent);
 				yPos_P1 = LEFT;
 				SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
 				P1_Move = TRUE;
 			}
 			if (GetAsyncKeyState(VK_RIGHT) & 0x8000) {
-				Send_Client_Packet.type = input_right;
+				Send_Client_Packet = input_right;
 				SetEvent(hSendEvent);
 				yPos_P1 = RIGHT;
 				SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
 				P1_Move = TRUE;
 			}
 			if (GetAsyncKeyState(VK_SPACE) & 0x8000 && !P1_InBubble) {
-				Send_Client_Packet.type = input_space;
+				Send_Client_Packet = input_space;
 				SetEvent(hSendEvent);
 				for (int i = 0; i < P1_bCount; ++i)
 				{
