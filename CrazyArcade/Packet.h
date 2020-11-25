@@ -29,4 +29,3 @@ enum ClientPacket {
 	state_dead = 64,
 	state_trapped = 128,
 };
-

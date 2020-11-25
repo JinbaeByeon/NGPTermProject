@@ -2,7 +2,7 @@
 #include "Packet.h"
 
 // 이벤트
-extern HANDLE hRecvEvent, hSendEvent, hConnectEvent;
+extern HANDLE hRecvEvent, hSendEvent, hConnectEvent, hPlayerEvent, hBubbleEvent;
 // 소켓
 extern SOCKET sock;
 // 패킷
@@ -10,11 +10,17 @@ extern PlayerPacket *Recv_Player_Packet;
 extern BubblePacket *Recv_Bubble_Packet;
 extern Packet Send_Client_Packet;
 Packet *Recv_Packet_Type;
-
+// 불값
+extern BOOL Bubble_Arrive, Player_Arrive;
+//핸들값
 extern HWND hwnd;
-
+// 플레이어
+extern RECT Player1, Player2;
 // 게임 스테이트 enum GAME_BG { MENU = 1, ROBBY = 2, INGAME = 3};
 extern int GameState;
+extern const int Player_CX = 34;
+extern const int Player_CY = 34;
+
 
 
 int recvn(SOCKET s, char* buf, int len, int flags)
@@ -39,6 +45,8 @@ int recvn(SOCKET s, char* buf, int len, int flags)
 // Receive를 수행할 스레드. 
 DWORD WINAPI RecvClient(LPVOID arg)
 {
+    Send_Client_Packet.type = state_dead;
+    printf("client.type : %d", Send_Client_Packet.type);
     // 메뉴 -> 로비로 가기 전까지 기다린다.
     WaitForSingleObject(hRecvEvent, INFINITE);
     ResetEvent(hRecvEvent);
@@ -68,7 +76,16 @@ DWORD WINAPI RecvClient(LPVOID arg)
     
     // 커넥트 이후 자신의 플레이어 패킷 수신
     retval = recvn(sock, buf, sizeof(PlayerPacket), 0);
+    buf[retval] = '\0';
+    Recv_Player_Packet = (PlayerPacket*)buf;
     SetEvent(hConnectEvent);    //connect가 끝나면 송신에서도 변수 사용가능하다는 이벤트 발생시킨다.
+
+    // 자기 자신의 위치 저장
+    Player1.left = Recv_Player_Packet->x;
+    Player1.top = Recv_Player_Packet->y;
+    Player1.right = Player1.left + Player_CX;
+    Player1.bottom = Player1.top + Player_CY;
+
 
     // 데이터 통신에 쓰일 while, 이 위에 처음 서버와 연결했을 때의 패킷을 받아오는 작업 필요
     while (1) {
@@ -88,19 +105,23 @@ DWORD WINAPI RecvClient(LPVOID arg)
             retval = recvn(sock, buf, sizeof(Packet), 0);
             buf[retval] = '\0';
             Recv_Packet_Type = (Packet*)buf;
+            printf("%d 번 패킷 수신\n\n", Recv_Packet_Type->type);
             if (Recv_Packet_Type->type == 1)
             {
                 retval = recvn(sock, buf, sizeof(PlayerPacket), 0);
                 buf[retval] = '\0';
                 Recv_Player_Packet = (PlayerPacket*)buf;
-                SetEvent(hRecvEvent);
+                SetEvent(hPlayerEvent);
+                Player_Arrive = true;
             }
             else if (Recv_Packet_Type->type == 2)
             {
                 retval = recvn(sock, buf, sizeof(BubblePacket), 0);
                 buf[retval] = '\0';
                 Recv_Bubble_Packet = (BubblePacket*)buf; 
-                SetEvent(hRecvEvent);
+                SetEvent(hBubbleEvent);
+                printf("Power : %d\nX : %d Y : %d\n\n", Recv_Bubble_Packet->power, Recv_Bubble_Packet->x, Recv_Bubble_Packet->y);
+                Bubble_Arrive = true;
             }
         }
     }
