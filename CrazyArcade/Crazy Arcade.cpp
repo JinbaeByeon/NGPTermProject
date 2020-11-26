@@ -21,6 +21,7 @@ void CALLBACK TimeProc_InBubble(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime
 void CALLBACK TimeProc_Die(HWND hWnd, UINT uMsg, UINT ideEvent, DWORD dwTime);
 void CALLBACK TimeProc_Monster_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 void CALLBACK TimeProc_Text(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
+void CALLBACK TimeProc_Recv_Bubble(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 void SetPos();
 void Animation();
 void SetBitmap();
@@ -104,7 +105,7 @@ enum Player_Position { LEFT = 3, RIGHT = 2, UP = 0, DOWN = 1 };
 enum Monster_Position { M_DOWN, M_LEFT, M_RIGHT, M_UP, M_DIE, M_REMOVE };
 enum GAME_BG { MENU = 1, ROBBY, INGAME };
 enum Item { Ball = 1, OnePower = 6, Speed = 11, MaxPower = 16, RedDevil = 21, Pint = 26 };
-enum Timer { Bubble_BfBoom, Bubble_Flow, P1, P2, In_Bubble, Die, Monster_Move };
+enum Timer { Bubble_BfBoom, Bubble_Flow, P1, P2, In_Bubble, Die, Monster_Move, Recv_Bubble };
 
 int GameState = MENU;
 int ItemValue;
@@ -295,8 +296,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM  lParam)
 				CSoundMgr::GetInstance()->PlayEffectSound2(L"SFX_Word_Start.ogg");
 				TextOn = TRUE;
 				SetTimer(hWnd, 8, 750, (TIMERPROC)TimeProc_Text);
+				SetTimer(hwnd, Recv_Bubble, 750, (TIMERPROC)TimeProc_Recv_Bubble);
 				GameState = INGAME;
-				bSceneChange = true;
+				bSceneChange = true;	
 				if (SelectMap1)
 					Sel_Map = 0;
 				else
@@ -1429,13 +1431,13 @@ void CALLBACK TimeProc_Bubble_Flow(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwT
 
 void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
-	WaitForSingleObject(hPlayerEvent, INFINITE);
+	SetEvent(hSendEvent);
+	WaitForSingleObject(hPlayerEvent, 10);
 	Player1.left = Recv_Player_Packet->x;
 	Player1.right = Player1.left + Player_CX;
 	Player1.top = Recv_Player_Packet->y;
 	Player1.bottom = Recv_Player_Packet->y + Player_CY;
 	ResetEvent(hPlayerEvent);			
-	KillTimer(hwnd, P1);
 
 	//switch (yPos_P1) {
 	//case LEFT:
@@ -2184,6 +2186,32 @@ void CALLBACK TimeProc_Text(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 	}
 }
 
+void CALLBACK TimeProc_Recv_Bubble(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
+{
+	if (Bubble_Arrive == false)
+		return;
+	else if (Bubble_Arrive)
+	{
+		P1_Power = Recv_Bubble_Packet->power;
+		for (int i = 0; i < P1_bCount; ++i)
+		{
+			if (!P1_Bubble[i] && !P1_Bubble_Flow[i])
+			{
+				for (int a = 0; a < 7; ++a)
+					bEffect[a] = TRUE;
+				P1_Bubble[i] = TRUE;
+				CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Bubble_On.ogg");
+				Tile_Bubble1[i].left = Recv_Bubble_Packet->x;
+				Tile_Bubble1[i].top = Recv_Bubble_Packet->y;
+				Tile_Bubble1[i].right = Tile_Bubble1[i].left + Tile_CX;
+				Tile_Bubble1[i].bottom = Tile_Bubble1[i].top + Tile_CY;
+				Bubble_Arrive = false;
+				return;
+			}
+		}
+	}
+}
+
 // 키보드 관련 함수
 void KEY_DOWN_P1(HWND hWnd)
 {
@@ -2199,60 +2227,68 @@ void KEY_DOWN_P1(HWND hWnd)
 			}
 
 			if (GetAsyncKeyState(VK_DOWN) & 0x8000) {
-				Send_Client_Packet = input_bottom;
-				SetEvent(hSendEvent);
-				yPos_P1 = DOWN;
-				SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
-				P1_Move = TRUE;
+				if (!P1_Move)
+				{
+					Send_Client_Packet = input_bottom;
+					yPos_P1 = DOWN;
+					SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
+					P1_Move = TRUE;
+				}
 			}
 			if (GetAsyncKeyState(VK_UP) & 0x8000) {
-				Send_Client_Packet = input_top;
-				SetEvent(hSendEvent);
-				yPos_P1 = UP;
-				SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
-				P1_Move = TRUE;
+				if (!P1_Move)
+				{
+					Send_Client_Packet = input_top;
+					yPos_P1 = UP;
+					SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
+					P1_Move = TRUE;
+				}
 			}
 			if (GetAsyncKeyState(VK_LEFT) & 0x8000) {
-				Send_Client_Packet = input_left;
-				SetEvent(hSendEvent);
-				yPos_P1 = LEFT;
-				SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
-				P1_Move = TRUE;
+				if (!P1_Move)
+				{
+					Send_Client_Packet = input_left;
+					yPos_P1 = LEFT;
+					SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
+					P1_Move = TRUE;
+				}
 			}
 			if (GetAsyncKeyState(VK_RIGHT) & 0x8000) {
-				Send_Client_Packet = input_right;
-				SetEvent(hSendEvent);
-				yPos_P1 = RIGHT;
-				SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
-				P1_Move = TRUE;
+				if (!P1_Move)
+				{
+					Send_Client_Packet = input_right;
+					yPos_P1 = RIGHT;
+					SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
+					P1_Move = TRUE;
+				}
 			}
 			if (GetAsyncKeyState(VK_SPACE) & 0x8000 && !P1_InBubble) {
 				Send_Client_Packet = input_space;
 				SetEvent(hSendEvent);
-				for (int i = 0; i < P1_bCount; ++i)
-				{
-					if (!P1_Bubble[i] && !P1_Bubble_Flow[i])
-					{
-						for (int a = 0; a < 7; ++a)
-							bEffect[a] = TRUE;
+				//for (int i = 0; i < P1_bCount; ++i)
+				//{
+				//	if (!P1_Bubble[i] && !P1_Bubble_Flow[i])
+				//	{
+				//		for (int a = 0; a < 7; ++a)
+				//			bEffect[a] = TRUE;
 
-						for (int j = 0; j < P1_bCount; ++j) {
-							if (Collision(Tile_Bubble1[j], (Player1.right + Player1.left) / 2, (Player1.top + Player1.bottom) / 2) || Collision(Tile_Bubble2[j], (Player1.right + Player1.left) / 2, (Player1.top + Player1.bottom) / 2)) {
-								return;
-							}
-						}
-						P1_Bubble[i] = TRUE;
-						CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Bubble_On.ogg");
-						for (int a = 0; a < Tile_CountY; a++)
-							for (int b = 0; b < Tile_CountX; b++)
-							{
-								if (Collision(Tile[a][b], (Player1.right + Player1.left) / 2, (Player1.top + Player1.bottom) / 2)) {
-									Tile_Bubble1[i] = Tile[a][b];
-									return;
-								}
-							}
-					}
-				}
+				//		for (int j = 0; j < P1_bCount; ++j) {
+				//			if (Collision(Tile_Bubble1[j], (Player1.right + Player1.left) / 2, (Player1.top + Player1.bottom) / 2) || Collision(Tile_Bubble2[j], (Player1.right + Player1.left) / 2, (Player1.top + Player1.bottom) / 2)) {
+				//				return;
+				//			}
+				//		}
+				//		P1_Bubble[i] = TRUE;
+				//		CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Bubble_On.ogg");
+				//		for (int a = 0; a < Tile_CountY; a++)
+				//			for (int b = 0; b < Tile_CountX; b++)
+				//			{
+				//				if (Collision(Tile[a][b], (Player1.right + Player1.left) / 2, (Player1.top + Player1.bottom) / 2)) {
+				//					Tile_Bubble1[i] = Tile[a][b];
+				//					return;
+				//				}
+				//			}
+				//	}
+				//}
 			}
 		}
 	}

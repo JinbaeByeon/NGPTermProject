@@ -78,6 +78,7 @@ DWORD WINAPI RecvClient(LPVOID arg)
     Recv_Player_Packet = (PlayerPacket*)buf;
     SetEvent(hConnectEvent);    //connect가 끝나면 송신에서도 변수 사용가능하다는 이벤트 발생시킨다.
     printf("야 위치 받았다. %d %d\n\n", Recv_Player_Packet->x, Recv_Player_Packet->y);
+    printf("Packet ID : %d\nPacket x : %d\nPacket y : %d\nPacket type : %d\n", Recv_Player_Packet->idx_player, Recv_Player_Packet->x, Recv_Player_Packet->y, Recv_Player_Packet->type);
     // 자기 자신의 위치 저장
     Player1.left = Recv_Player_Packet->x;
     Player1.top = Recv_Player_Packet->y;
@@ -93,10 +94,6 @@ DWORD WINAPI RecvClient(LPVOID arg)
             //retval = recvn(sock, buf, sizeof(PlayerPacket), 0);
             //buf[retval] = '\0';
             Recv_Player_Packet = (PlayerPacket*)buf;
-            if (Recv_Player_Packet->idx_player == 1)
-            {
-                printf("Packet ID : %d\nPacket x : %d\nPacket y : %d\nPacket type : %d\n", Recv_Player_Packet->idx_player, Recv_Player_Packet->x, Recv_Player_Packet->y, Recv_Player_Packet->type);
-            }
         }
         else if (GameState == 3)
         {
@@ -106,7 +103,7 @@ DWORD WINAPI RecvClient(LPVOID arg)
             printf("%d 번 패킷 수신\n\n", Recv_Packet_Type->type);
             if (Recv_Packet_Type->type == 0 || Recv_Packet_Type->type == 1)
             {
-                printf("여기까지는 넘어왔다");
+                printf("여기까지는 넘어왔다\n");
                 retval = recvn(sock, buf, sizeof(PlayerPacket), 0);
                 buf[retval] = '\0';
                 Recv_Player_Packet = (PlayerPacket*)buf;
@@ -114,7 +111,7 @@ DWORD WINAPI RecvClient(LPVOID arg)
                 SetEvent(hPlayerEvent);
                 Player_Arrive = true;
             }
-            else if (Recv_Player_Packet->type == 2)
+            else if (Recv_Packet_Type->type == 16)
             {
                 retval = recvn(sock, buf, sizeof(BubblePacket), 0);
                 buf[retval] = '\0';

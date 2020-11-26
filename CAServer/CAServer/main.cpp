@@ -93,11 +93,14 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
             EnterCriticalSection(&cs2);
             if (CP >= ClientPacket::input_left && CP <= ClientPacket::input_bottom)
             {
+                Pp[SendPacket_Idx].type = 1;
+                printf("보내는 type 값 : %d\n", Pp[SendPacket_Idx].type);
                 retval = send(client_sock, (char*)&Pp[SendPacket_Idx].type, sizeof(Pp[SendPacket_Idx].type), 0);
                 if (retval == SOCKET_ERROR) {
                     m_SF.err_display("send()");
                     break;
                 }
+                printf("보내는 type 값 : %d\n", Pp[SendPacket_Idx].type);
                 retval = send(client_sock, (char*)&Pp[SendPacket_Idx], sizeof(Pp[SendPacket_Idx]), 0);
                 if (retval == SOCKET_ERROR) {
                     m_SF.err_display("send()");
