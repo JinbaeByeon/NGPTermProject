@@ -8,7 +8,7 @@ extern SOCKET sock;
 // 패킷
 extern PlayerPacket *Recv_Player_Packet;
 extern BubblePacket *Recv_Bubble_Packet;
-extern enum ClientPacket Send_Client_Packet;
+Packet* Send_Client_Packet;
 Packet *Recv_Packet_Type;
 // 불값
 extern BOOL Bubble_Arrive, Player_Arrive;
@@ -20,7 +20,7 @@ extern RECT Player1, Player2;
 extern int GameState;
 extern const int Player_CX = 34;
 extern const int Player_CY = 34;
-
+extern int Client_Idx;
 
 
 int recvn(SOCKET s, char* buf, int len, int flags)
@@ -79,6 +79,7 @@ DWORD WINAPI RecvClient(LPVOID arg)
     SetEvent(hConnectEvent);    //connect가 끝나면 송신에서도 변수 사용가능하다는 이벤트 발생시킨다.
     printf("야 위치 받았다. %d %d\n\n", Recv_Player_Packet->x, Recv_Player_Packet->y);
     printf("Packet ID : %d\nPacket x : %d\nPacket y : %d\nPacket type : %d\n", Recv_Player_Packet->idx_player, Recv_Player_Packet->x, Recv_Player_Packet->y, Recv_Player_Packet->type);
+    Client_Idx = Recv_Player_Packet->idx_player;
     // 자기 자신의 위치 저장
     Player1.left = Recv_Player_Packet->x;
     Player1.top = Recv_Player_Packet->y;
@@ -120,6 +121,7 @@ DWORD WINAPI RecvClient(LPVOID arg)
                 printf("Power : %d\nX : %d Y : %d\n\n", Recv_Bubble_Packet->power, Recv_Bubble_Packet->x, Recv_Bubble_Packet->y);
                 Bubble_Arrive = true;
             }
+
         }
     }
 

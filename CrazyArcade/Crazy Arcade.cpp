@@ -43,8 +43,8 @@ BOOL Bubble_Arrive = false, Player_Arrive = false;
 // 패킷
 PlayerPacket *Recv_Player_Packet;
 BubblePacket *Recv_Bubble_Packet;
-enum ClientPacket Send_Client_Packet;
-
+Packet* Send_Client_Packet;
+int Client_Idx;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
@@ -104,7 +104,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 enum Player_Position { LEFT = 3, RIGHT = 2, UP = 0, DOWN = 1 };
 enum Monster_Position { M_DOWN, M_LEFT, M_RIGHT, M_UP, M_DIE, M_REMOVE };
 enum GAME_BG { MENU = 1, ROBBY, INGAME };
-enum Item { Ball = 1, OnePower = 6, Speed = 11, MaxPower = 16, RedDevil = 21, Pint = 26 };
+enum Item { Ball = 1, OnePower = 6, Speed = 11, MaxPower = 16, RedDevil = 21};
 enum Timer { Bubble_BfBoom, Bubble_Flow, P1, P2, In_Bubble, Die, Monster_Move, Recv_Bubble };
 
 int GameState = MENU;
@@ -290,7 +290,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM  lParam)
 		{
 			if (Collision(GameStart, M_X, M_Y))
 			{
-				Send_Client_Packet = input_left;
+				// 레디 패킷 보냄
+				WaitForSingleObject(hSendEvent, INFINITE);
+				Send_Client_Packet = new Packet(PacketType::ready);
+				SetEvent(hSendEvent);
+
 				SetEvent(hSendEvent);
 				CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Button_Off.ogg");
 				CSoundMgr::GetInstance()->PlayEffectSound2(L"SFX_Word_Start.ogg");
@@ -1133,7 +1137,7 @@ void Animation()
 		// 아이템
 		for (int i = 0; i < Tile_CountY; i++)
 			for (int j = 0; j < Tile_CountX; j++) {
-				if (Itemset[Sel_Map][i][j] != 0 && Itemset[Sel_Map][i][j] != 7 && Itemset[Sel_Map][i][j] != Pint) {
+				if (Itemset[Sel_Map][i][j] != 0 && Itemset[Sel_Map][i][j] != 7) {
 					if (IntersectRect(&Temp, &Player1, &Tile[i][j])) {
 						if (Itemset[Sel_Map][i][j] == Ball) {
 							CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
@@ -1315,7 +1319,7 @@ void ChainBomb(RECT Bubble, int Power)
 
 	for (int i = 0; i < Tile_CountY; i++)
 		for (int j = 0; j < Tile_CountX; j++) {
-			if (Itemset[Sel_Map][i][j] != 0 && Itemset[Sel_Map][i][j] != 7 && Itemset[Sel_Map][i][j] != Pint && !isBox[Sel_Map][i][j]) {
+			if (Itemset[Sel_Map][i][j] != 0 && Itemset[Sel_Map][i][j] != 7 && !isBox[Sel_Map][i][j]) {
 				for (int k = 0; k < 5; k++)
 					if (IntersectRect(&rc, &Check[k], &Tile[i][j]))
 						Itemset[Sel_Map][i][j] = 0;
@@ -1437,142 +1441,147 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 	Player1.right = Player1.left + Player_CX;
 	Player1.top = Recv_Player_Packet->y;
 	Player1.bottom = Recv_Player_Packet->y + Player_CY;
-	ResetEvent(hPlayerEvent);			
+	ResetEvent(hPlayerEvent);
 
-	//switch (yPos_P1) {
-	//case LEFT:
-	//	if (Player1.left >= StartX + 10) {
-	//		Player1.left -= 5;
-	//		Player1.right -= 5;
-	//		for (int i = 0; i < Tile_CountY; i++)
-	//			for (int j = 0; j < Tile_CountX; j++)
-	//				if ((Collision(Tile[i][j], Player1.left, Player1.top) || Collision(Tile[i][j], Player1.left, Player1.bottom)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
-	//					Player1.left = Tile[i][j].right;
-	//					Player1.right = Player1.left + Player_CX;
-	//					// 블럭 충돌체크 부드럽게
-	//					if (Tile[i][j].bottom < (Player1.top + Player1.bottom) / 2 && Tile_Enable_Move[Sel_Map][i + 1][j] && !isBox[Sel_Map][i + 1][j]) {
-	//						Player1.top = Tile[i + 1][j].top;
-	//						Player1.bottom = Player1.top + Player_CY;
-	//					}
-	//					if ((Player1.top + Player1.bottom) / 2 < Tile[i][j].top && Tile_Enable_Move[Sel_Map][i - 1][j] && !isBox[Sel_Map][i - 1][j]) {
-	//						Player1.bottom = Tile[i - 1][j].bottom;
-	//						Player1.top = Player1.bottom - Player_CY;
-	//					}
-	//				}
-	//	}
-	//	else if (Player1.left <= StartX + 10) {
-	//		Player1.left = StartX;
-	//		Player1.right = Player1.left + Player_CX;
-	//	}
-	//	// 물풍선 체크
-	//	for (int i = 0; i < P1_bCount; i++) {
-	//		if (P1_Bubble[i] && Collision(Tile_Bubble1[i], Player1.left, (Player1.top + Player1.bottom) / 2) &&
-	//			Tile_Bubble1[i].right - 6 <= Player1.left && Player1.left <= Tile_Bubble1[i].right + 6) {
-	//			Player1.left = Tile_Bubble1[i].right;
-	//			Player1.right = Player1.left + Player_CX;
-	//		}
-	//	}
-	//	break;
-	//case RIGHT:
-	//	if (Player1.right <= Tile[12][14].right - 10) {
-	//		Player1.left += 5;
-	//		Player1.right += 5;
-	//		for (int i = 0; i < Tile_CountY; i++)
-	//			for (int j = 0; j < Tile_CountX; j++)
-	//				if ((Collision(Tile[i][j], Player1.right, Player1.top) || Collision(Tile[i][j], Player1.right, Player1.bottom)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
-	//					Player1.right = Tile[i][j].left;
-	//					Player1.left = Player1.right - Player_CX;
-	//					// 블럭 충돌체크 부드럽게
-	//					if (Tile[i][j].bottom < (Player1.top + Player1.bottom) / 2 && Tile_Enable_Move[Sel_Map][i + 1][j] && !isBox[Sel_Map][i + 1][j]) {
-	//						Player1.top = Tile[i + 1][j].top;
-	//						Player1.bottom = Player1.top + Player_CY;
-	//					}
-	//					if ((Player1.top + Player1.bottom) / 2 < Tile[i][j].top && Tile_Enable_Move[Sel_Map][i - 1][j] && !isBox[Sel_Map][i - 1][j]) {
-	//						Player1.bottom = Tile[i - 1][j].bottom;
-	//						Player1.top = Player1.bottom - Player_CY;
-	//					}
-	//				}
-	//	}
-	//	else if (Player1.right >= Tile[12][14].right - 10) {
-	//		Player1.right = Tile[12][14].right;
-	//		Player1.left = Player1.right - Player_CX;
-	//	}
-	//	// 물풍선 체크
-	//	for (int i = 0; i < P1_bCount; i++) {
-	//		if (P1_Bubble[i] && Collision(Tile_Bubble1[i], Player1.right, (Player1.top + Player1.bottom) / 2) &&
-	//			Tile_Bubble1[i].left - 6 <= Player1.right && Player1.right <= Tile_Bubble1[i].left + 6) {
-	//			Player1.right = Tile_Bubble1[i].left;
-	//			Player1.left = Player1.right - Player_CX;
-	//		}
-	//	}
-	//	break;
-	//case UP:
-	//	if (Player1.top >= StartY + 10) {
-	//		Player1.top -= 5;
-	//		Player1.bottom -= 5;
-	//		for (int i = 0; i < Tile_CountY; i++)
-	//			for (int j = 0; j < Tile_CountX; j++)
-	//				if ((Collision(Tile[i][j], Player1.left, Player1.top) || Collision(Tile[i][j], Player1.right, Player1.top)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
-	//					Player1.top = Tile[i][j].bottom;
-	//					Player1.bottom = Player1.top + Player_CY;
-	//					// 블럭 충돌체크 부드럽게
-	//					if (Tile[i][j].right < (Player1.left + Player1.right) / 2 && Tile_Enable_Move[Sel_Map][i][j + 1] && !isBox[Sel_Map][i][j + 1]) {
-	//						Player1.left = Tile[i][j + 1].left;
-	//						Player1.right = Player1.left + Player_CX;
-	//					}
-	//					if ((Player1.left + Player1.right) / 2 < Tile[i][j].left && Tile_Enable_Move[Sel_Map][i][j - 1] && !isBox[Sel_Map][i][j - 1]) {
-	//						Player1.right = Tile[i][j - 1].right;
-	//						Player1.left = Player1.right - Player_CX;
-	//					}
-	//				}
-	//	}
-	//	else if (Player1.top <= StartY + 5) {
-	//		Player1.top = StartY;
-	//		Player1.bottom = Player1.top + Player_CY;
-	//	}
-	//	// 물풍선 체크
-	//	for (int i = 0; i < P1_bCount; i++) {
-	//		if (P1_Bubble[i] && Collision(Tile_Bubble1[i], (Player1.left + Player1.right) / 2, Player1.top) &&
-	//			Tile_Bubble1[i].bottom - 6 <= Player1.top && Player1.top <= Tile_Bubble1[i].bottom + 6) {
-	//			Player1.top = Tile_Bubble1[i].bottom;
-	//			Player1.bottom = Player1.top + Player_CY;
-	//		}
-	//	}
-	//	break;
-	//case DOWN:
-	//	if (Player1.bottom <= Tile[12][14].bottom - 10) {
-	//		Player1.top += 5;
-	//		Player1.bottom += 5;
-	//		for (int i = 0; i < Tile_CountY; i++)
-	//			for (int j = 0; j < Tile_CountX; j++)
-	//				if ((Collision(Tile[i][j], Player1.left, Player1.bottom) || Collision(Tile[i][j], Player1.right, Player1.bottom)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
-	//					Player1.bottom = Tile[i][j].top;
-	//					Player1.top = Player1.bottom - Player_CY;
-	//					// 블럭 충돌체크 부드럽게
-	//					if (Tile[i][j].right < (Player1.left + Player1.right) / 2 && Tile_Enable_Move[Sel_Map][i][j + 1] && !isBox[Sel_Map][i][j + 1]) {
-	//						Player1.left = Tile[i][j + 1].left;
-	//						Player1.right = Player1.left + Player_CX;
-	//					}
-	//					if ((Player1.left + Player1.right) / 2 < Tile[i][j].left && Tile_Enable_Move[Sel_Map][i][j - 1] && !isBox[Sel_Map][i][j - 1]) {
-	//						Player1.right = Tile[i][j - 1].right;
-	//						Player1.left = Player1.right - Player_CX;
-	//					}
-	//				}
-	//	}
-	//	else if (Player1.bottom >= Tile[12][14].bottom - 10) {
-	//		Player1.bottom = Tile[12][14].bottom;
-	//		Player1.top = Player1.bottom - Player_CY;
-	//	}
-	//	// 물풍선 체크
-	//	for (int i = 0; i < P1_bCount; i++) {
-	//		if (P1_Bubble[i] && Collision(Tile_Bubble1[i], (Player1.left + Player1.right) / 2, Player1.bottom) &&
-	//			Tile_Bubble1[i].top - 6 <= Player1.bottom && Player1.bottom <= Tile_Bubble1[i].top + 6) {
-	//			Player1.bottom = Tile_Bubble1[i].top;
-	//			Player1.top = Player1.bottom - Player_CY;
-	//		}
-	//	}
-	//	break;
-	//}
+	RECT tmpRECT = Player1;
+	switch (yPos_P1) {
+	case LEFT:
+		if (tmpRECT.left >= StartX + 10) {
+			tmpRECT.left -= 5;
+			tmpRECT.right -= 5;
+			for (int i = 0; i < Tile_CountY; i++)
+				for (int j = 0; j < Tile_CountX; j++)
+					if ((Collision(Tile[i][j], tmpRECT.left, tmpRECT.top) || Collision(Tile[i][j], tmpRECT.left, tmpRECT.bottom)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
+						tmpRECT.left = Tile[i][j].right;
+						tmpRECT.right = tmpRECT.left + Player_CX;
+						// 블럭 충돌체크 부드럽게
+						if (Tile[i][j].bottom < (tmpRECT.top + tmpRECT.bottom) / 2 && Tile_Enable_Move[Sel_Map][i + 1][j] && !isBox[Sel_Map][i + 1][j]) {
+							tmpRECT.top = Tile[i + 1][j].top;
+							tmpRECT.bottom = tmpRECT.top + Player_CY;
+						}
+						if ((tmpRECT.top + tmpRECT.bottom) / 2 < Tile[i][j].top && Tile_Enable_Move[Sel_Map][i - 1][j] && !isBox[Sel_Map][i - 1][j]) {
+							tmpRECT.bottom = Tile[i - 1][j].bottom;
+							tmpRECT.top = tmpRECT.bottom - Player_CY;
+						}
+					}
+		}
+		else if (tmpRECT.left <= StartX + 10) {
+			tmpRECT.left = StartX;
+			tmpRECT.right = tmpRECT.left + Player_CX;
+		}
+		// 물풍선 체크
+		for (int i = 0; i < P1_bCount; i++) {
+			if (P1_Bubble[i] && Collision(Tile_Bubble1[i], tmpRECT.left, (tmpRECT.top + tmpRECT.bottom) / 2) &&
+				Tile_Bubble1[i].right - 6 <= tmpRECT.left && tmpRECT.left <= Tile_Bubble1[i].right + 6) {
+				tmpRECT.left = Tile_Bubble1[i].right;
+				tmpRECT.right = tmpRECT.left + Player_CX;
+			}
+		}
+		break;
+	case RIGHT:
+		if (tmpRECT.right <= Tile[12][14].right - 10) {
+			tmpRECT.left += 5;
+			tmpRECT.right += 5;
+			for (int i = 0; i < Tile_CountY; i++)
+				for (int j = 0; j < Tile_CountX; j++)
+					if ((Collision(Tile[i][j], tmpRECT.right, tmpRECT.top) || Collision(Tile[i][j], tmpRECT.right, tmpRECT.bottom)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
+						tmpRECT.right = Tile[i][j].left;
+						tmpRECT.left = tmpRECT.right - Player_CX;
+						// 블럭 충돌체크 부드럽게
+						if (Tile[i][j].bottom < (tmpRECT.top + tmpRECT.bottom) / 2 && Tile_Enable_Move[Sel_Map][i + 1][j] && !isBox[Sel_Map][i + 1][j]) {
+							tmpRECT.top = Tile[i + 1][j].top;
+							tmpRECT.bottom = tmpRECT.top + Player_CY;
+						}
+						if ((tmpRECT.top + tmpRECT.bottom) / 2 < Tile[i][j].top && Tile_Enable_Move[Sel_Map][i - 1][j] && !isBox[Sel_Map][i - 1][j]) {
+							tmpRECT.bottom = Tile[i - 1][j].bottom;
+							tmpRECT.top = tmpRECT.bottom - Player_CY;
+						}
+					}
+		}
+		else if (tmpRECT.right >= Tile[12][14].right - 10) {
+			tmpRECT.right = Tile[12][14].right;
+			tmpRECT.left = tmpRECT.right - Player_CX;
+		}
+		// 물풍선 체크
+		for (int i = 0; i < P1_bCount; i++) {
+			if (P1_Bubble[i] && Collision(Tile_Bubble1[i], tmpRECT.right, (tmpRECT.top + tmpRECT.bottom) / 2) &&
+				Tile_Bubble1[i].left - 6 <= tmpRECT.right && tmpRECT.right <= Tile_Bubble1[i].left + 6) {
+				tmpRECT.right = Tile_Bubble1[i].left;
+				tmpRECT.left = tmpRECT.right - Player_CX;
+			}
+		}
+		break;
+	case UP:
+		if (tmpRECT.top >= StartY + 10) {
+			tmpRECT.top -= 5;
+			tmpRECT.bottom -= 5;
+			for (int i = 0; i < Tile_CountY; i++)
+				for (int j = 0; j < Tile_CountX; j++)
+					if ((Collision(Tile[i][j], tmpRECT.left, tmpRECT.top) || Collision(Tile[i][j], tmpRECT.right, tmpRECT.top)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
+						tmpRECT.top = Tile[i][j].bottom;
+						tmpRECT.bottom = tmpRECT.top + Player_CY;
+						// 블럭 충돌체크 부드럽게
+						if (Tile[i][j].right < (tmpRECT.left + tmpRECT.right) / 2 && Tile_Enable_Move[Sel_Map][i][j + 1] && !isBox[Sel_Map][i][j + 1]) {
+							tmpRECT.left = Tile[i][j + 1].left;
+							tmpRECT.right = tmpRECT.left + Player_CX;
+						}
+						if ((tmpRECT.left + tmpRECT.right) / 2 < Tile[i][j].left && Tile_Enable_Move[Sel_Map][i][j - 1] && !isBox[Sel_Map][i][j - 1]) {
+							tmpRECT.right = Tile[i][j - 1].right;
+							tmpRECT.left = tmpRECT.right - Player_CX;
+						}
+					}
+		}
+		else if (tmpRECT.top <= StartY + 5) {
+			tmpRECT.top = StartY;
+			tmpRECT.bottom = tmpRECT.top + Player_CY;
+		}
+		// 물풍선 체크
+		for (int i = 0; i < P1_bCount; i++) {
+			if (P1_Bubble[i] && Collision(Tile_Bubble1[i], (tmpRECT.left + tmpRECT.right) / 2, tmpRECT.top) &&
+				Tile_Bubble1[i].bottom - 6 <= tmpRECT.top && tmpRECT.top <= Tile_Bubble1[i].bottom + 6) {
+				tmpRECT.top = Tile_Bubble1[i].bottom;
+				tmpRECT.bottom = tmpRECT.top + Player_CY;
+			}
+		}
+		break;
+	case DOWN:
+		if (tmpRECT.bottom <= Tile[12][14].bottom - 10) {
+			tmpRECT.top += 5;
+			tmpRECT.bottom += 5;
+			for (int i = 0; i < Tile_CountY; i++)
+				for (int j = 0; j < Tile_CountX; j++)
+					if ((Collision(Tile[i][j], tmpRECT.left, tmpRECT.bottom) || Collision(Tile[i][j], tmpRECT.right, tmpRECT.bottom)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
+						tmpRECT.bottom = Tile[i][j].top;
+						tmpRECT.top = tmpRECT.bottom - Player_CY;
+						// 블럭 충돌체크 부드럽게
+						if (Tile[i][j].right < (tmpRECT.left + tmpRECT.right) / 2 && Tile_Enable_Move[Sel_Map][i][j + 1] && !isBox[Sel_Map][i][j + 1]) {
+							tmpRECT.left = Tile[i][j + 1].left;
+							tmpRECT.right = tmpRECT.left + Player_CX;
+						}
+						if ((tmpRECT.left + tmpRECT.right) / 2 < Tile[i][j].left && Tile_Enable_Move[Sel_Map][i][j - 1] && !isBox[Sel_Map][i][j - 1]) {
+							tmpRECT.right = Tile[i][j - 1].right;
+							tmpRECT.left = tmpRECT.right - Player_CX;
+						}
+					}
+		}
+		else if (tmpRECT.bottom >= Tile[12][14].bottom - 10) {
+			tmpRECT.bottom = Tile[12][14].bottom;
+			tmpRECT.top = tmpRECT.bottom - Player_CY;
+		}
+		// 물풍선 체크
+		for (int i = 0; i < P1_bCount; i++) {
+			if (P1_Bubble[i] && Collision(Tile_Bubble1[i], (tmpRECT.left + tmpRECT.right) / 2, tmpRECT.bottom) &&
+				Tile_Bubble1[i].top - 6 <= tmpRECT.bottom && tmpRECT.bottom <= Tile_Bubble1[i].top + 6) {
+				tmpRECT.bottom = Tile_Bubble1[i].top;
+				tmpRECT.top = tmpRECT.bottom - Player_CY;
+			}
+		}
+		break;
+	}
+	// 플레이어 이동 패킷 생성 - 상태 아직 안보냄
+	WaitForSingleObject(hSendEvent,INFINITE);
+	Send_Client_Packet = new InputPacket(Client_Idx, tmpRECT.left, tmpRECT.top, 0);
+	SetEvent(hSendEvent);
 	InvalidateRect(hWnd, NULL, FALSE);
 }
 
@@ -2219,7 +2228,6 @@ void KEY_DOWN_P1(HWND hWnd)
 	{
 		if (!P1_Die && P1_Live) {
 			if (GetAsyncKeyState(VK_CONTROL) & 0x8000 && P1_InBubble && P1_N) {
-				Send_Client_Packet = input_ctrl;
 				SetEvent(hSendEvent);
 				//P1_Speed = P1_tSpeed;
 				//P1_InBubble = FALSE;
@@ -2229,7 +2237,6 @@ void KEY_DOWN_P1(HWND hWnd)
 			if (GetAsyncKeyState(VK_DOWN) & 0x8000) {
 				if (!P1_Move)
 				{
-					Send_Client_Packet = input_bottom;
 					yPos_P1 = DOWN;
 					SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
 					P1_Move = TRUE;
@@ -2238,7 +2245,6 @@ void KEY_DOWN_P1(HWND hWnd)
 			if (GetAsyncKeyState(VK_UP) & 0x8000) {
 				if (!P1_Move)
 				{
-					Send_Client_Packet = input_top;
 					yPos_P1 = UP;
 					SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
 					P1_Move = TRUE;
@@ -2247,7 +2253,6 @@ void KEY_DOWN_P1(HWND hWnd)
 			if (GetAsyncKeyState(VK_LEFT) & 0x8000) {
 				if (!P1_Move)
 				{
-					Send_Client_Packet = input_left;
 					yPos_P1 = LEFT;
 					SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
 					P1_Move = TRUE;
@@ -2256,39 +2261,41 @@ void KEY_DOWN_P1(HWND hWnd)
 			if (GetAsyncKeyState(VK_RIGHT) & 0x8000) {
 				if (!P1_Move)
 				{
-					Send_Client_Packet = input_right;
 					yPos_P1 = RIGHT;
 					SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
 					P1_Move = TRUE;
 				}
 			}
 			if (GetAsyncKeyState(VK_SPACE) & 0x8000 && !P1_InBubble) {
-				Send_Client_Packet = input_space;
-				SetEvent(hSendEvent);
-				//for (int i = 0; i < P1_bCount; ++i)
-				//{
-				//	if (!P1_Bubble[i] && !P1_Bubble_Flow[i])
-				//	{
-				//		for (int a = 0; a < 7; ++a)
-				//			bEffect[a] = TRUE;
+				
+				for (int i = 0; i < P1_bCount; ++i)
+				{
+					if (!P1_Bubble[i] && !P1_Bubble_Flow[i])
+					{
+						for (int a = 0; a < 7; ++a)
+							bEffect[a] = TRUE;
 
-				//		for (int j = 0; j < P1_bCount; ++j) {
-				//			if (Collision(Tile_Bubble1[j], (Player1.right + Player1.left) / 2, (Player1.top + Player1.bottom) / 2) || Collision(Tile_Bubble2[j], (Player1.right + Player1.left) / 2, (Player1.top + Player1.bottom) / 2)) {
-				//				return;
-				//			}
-				//		}
-				//		P1_Bubble[i] = TRUE;
-				//		CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Bubble_On.ogg");
-				//		for (int a = 0; a < Tile_CountY; a++)
-				//			for (int b = 0; b < Tile_CountX; b++)
-				//			{
-				//				if (Collision(Tile[a][b], (Player1.right + Player1.left) / 2, (Player1.top + Player1.bottom) / 2)) {
-				//					Tile_Bubble1[i] = Tile[a][b];
-				//					return;
-				//				}
-				//			}
-				//	}
-				//}
+						for (int j = 0; j < P1_bCount; ++j) {
+							if (Collision(Tile_Bubble1[j], (Player1.right + Player1.left) / 2, (Player1.top + Player1.bottom) / 2) || Collision(Tile_Bubble2[j], (Player1.right + Player1.left) / 2, (Player1.top + Player1.bottom) / 2)) {
+								return;
+							}
+						}
+						P1_Bubble[i] = TRUE;
+						CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Bubble_On.ogg");
+						for (int a = 0; a < Tile_CountY; a++)
+							for (int b = 0; b < Tile_CountX; b++)
+							{
+								if (Collision(Tile[a][b], (Player1.right + Player1.left) / 2, (Player1.top + Player1.bottom) / 2)) {
+									Tile_Bubble1[i] = Tile[a][b];
+									// 물풍선 패킷 생성
+									WaitForSingleObject(hSendEvent, INFINITE);
+									Send_Client_Packet = new InputPacket(Tile[a][b].left, Tile[a][b].left, P1_Power);
+									SetEvent(hSendEvent);
+									return;
+								}
+							}
+					}
+				}
 			}
 		}
 	}
@@ -2585,8 +2592,9 @@ void SetPos()
 	for (int i = 0; i < Tile_CountY; i++)
 		for (int j = 0; j < Tile_CountX; j++) {
 			ItemValue = rand() % 30;
-			if (ItemValue != 0 && ItemValue != 7 && isBox[0][i][j])
+			if (ItemValue != 0 && ItemValue != 7 && isBox[0][i][j]) {
 				Itemset[0][i][j] = ItemValue;
+			}
 		}
 
 	// 맵2 아이템

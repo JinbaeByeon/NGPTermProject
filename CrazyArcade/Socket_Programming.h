@@ -1,7 +1,7 @@
 #pragma once
 #include "stdafx.h"
 
-#define SERVERIP   "121.170.57.218"
+#define SERVERIP   "127.0.0.1"
 #define SERVERPORT 9000
 #define BUFSIZE	   4096
 
