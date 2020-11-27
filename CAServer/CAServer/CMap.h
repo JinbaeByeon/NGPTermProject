@@ -40,8 +40,14 @@ public:
 	const int Player_CX = 34;
 	const int Player_CY = 34;
 
+	BOOL Bubble[3][7] = { FALSE };
+
+	RECT Tile_Bubble[3][7];
+
 	void Init_Map();
 
 	BOOL Collision(RECT rect, int x, int y);
+
+	BOOL InBubble_Collision(RECT rt, int t, int l, int b, int r);
 };
 

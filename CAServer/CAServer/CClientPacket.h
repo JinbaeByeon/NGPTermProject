@@ -2,29 +2,55 @@
 #include"stdafx.h"
 #include "CMap.h"
 
-class Packet
+// ÀÌµ¿ = 1, ¹°Ç³¼± = 2
+struct Packet
 {
-public:
+	Packet(int type) { this->type = type; }
 	int type;
 };
 
-class PlayerPacket : public Packet
+enum PacketType
 {
-public:
-	int idx_player = 0;
-	int left = 0, top = 0;
-	unsigned short status;
+	index,
+	start,
+	player,
+	item,
+	bubble,
+	ready,
 };
 
-class BubblePacket : public Packet
+struct InputPacket : public Packet
 {
-public:
+	InputPacket(int idx, int x, int y, u_short stat) :Packet(player) { idx_player = idx; this->x = x; this->y = y; status = stat; }
+	InputPacket(int x, int y, int power) :Packet(bubble) { this->x = x; this->y = y; this->power = power; }
+
+	int idx_player;
 	int power;
-	int left = 0, top = 0;
+	int x, y;
+	u_short status;
+};
+
+struct PlayerPacket : public Packet
+{
+	PlayerPacket(int idx, int x, int y, u_short stat) :Packet(player) { idx_player = idx; this->x = x; this->y = y; status = stat; }
+	int idx_player;
+	int x, y;
+	u_short status;
+};
+
+struct BubblePacket : public Packet
+{
+	int power;
+	int x, y;
+};
+
+struct ItemPacket : public Packet
+{
+	int x, y;
+	int value;
 };
 
 enum ClientPacket {
-	empty = 0,
 	input_left = 1,
 	input_right = 2,
 	input_top = 4,
@@ -41,6 +67,10 @@ public:
 	~PacketFunc() {}
 
 
-	void PlayerPacketProcess(CMap M, ClientPacket CP, PlayerPacket *P, int idx);
-	void BubblePacketProcess(CMap M, ClientPacket CP, BubblePacket *B);
+	/*void PlayerPacketProcess(CMap M, InputPacket Recv_P, InputPacket*P
+		, int idx);
+	void BubblePacketProcess(CMap* M, InputPacket Recv_P, InputPacket* P);*/
+
+	void InitPlayer(CMap m_Map, InputPacket* Send_P, int idx);
+	void InitPacket(InputPacket* P);
 };

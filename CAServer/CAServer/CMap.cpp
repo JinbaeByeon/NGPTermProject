@@ -92,3 +92,10 @@ BOOL CMap::Collision(RECT rect, int x, int y)
         return TRUE;
     return FALSE;
 }
+
+BOOL CMap::InBubble_Collision(RECT rt, int t, int l, int b, int r)
+{
+    if (t <= (rt.top + rt.bottom) / 2 && (rt.top + rt.bottom) / 2 <= b && l <= (rt.right + rt.left) / 2 && (rt.right + rt.left) / 2 <= r)
+        return TRUE;
+    return FALSE;
+}

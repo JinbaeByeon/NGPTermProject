@@ -14,3 +14,9 @@
 #define SERVERPORT 9000
 #define BUFSIZE    4096
 #define MAX_CLIENT 3
+
+enum GameState {
+	Accept = 1,
+	Robby = 2,
+	InGame = 3
+};

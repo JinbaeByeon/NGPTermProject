@@ -5,7 +5,7 @@
 
 
 int client_ID[3] = { 1, 2, 3 };
-int ThreadOn[3] = { 0 };
+BOOL ThreadOn[3] = { FALSE }; // 스레드 생성 확인
 
 int Thread_Count;
 
@@ -13,10 +13,9 @@ HANDLE hSendEvent;
 HANDLE hRecvEvent;
 
 
-PlayerPacket Pp[3]; // 플레이어 정보 패킷
-BubblePacket Bp;    // 물풍선 정보 패킷
-ClientPacket CP;
-Packet P;
+InputPacket *Send_P;
+InputPacket *Recv_P;
+PacketType PT;
 
 CMap m_Map;
 
@@ -25,7 +24,7 @@ CRITICAL_SECTION cs1, cs2;
 SocketFunc m_SF;
 PacketFunc m_PF;
 
-int step = 0;
+int step = Accept; // 게임 흐름
 int SendPacket_Idx = 0;
 
 
@@ -47,32 +46,34 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
     addrlen = sizeof(clientaddr);
     getpeername(client_sock, (SOCKADDR*)&clientaddr, &addrlen);
 
+    m_PF.InitPacket(Send_P);
+    m_PF.InitPacket(Recv_P);
+
     while (1) {
         // 클라이언트와 데이터 통신
-        if (step == 0)
+        if (step == Accept)
         {
             if (ThreadOn[Thread_idx])
             {
                 WaitForSingleObject(hSendEvent, INFINITY);
             
-                Pp[Thread_idx].idx_player = client_ID[Thread_idx];
-                if (client_ID[Thread_idx] == 1)
-                    Pp[Thread_idx].left = m_Map.Tile[0][0].left, Pp[Thread_idx].top = m_Map.Tile[0][0].top
-                    , Pp[Thread_idx].status = 1;
-                retval = send(client_sock, (char*)&Pp[Thread_idx], sizeof(Pp[Thread_idx]), 0);
+                m_PF.InitPlayer(m_Map, Send_P, Thread_idx);
+
+                retval = send(client_sock, (char*)&Send_P, sizeof(Send_P), 0);
                 if (retval == SOCKET_ERROR) {
                     m_SF.err_display("send()");
                     break;
                 }
+
                 printf("[TCP 서버] %d번 클라이언트 위치 전송 : %d %d\n",
-                    client_ID[Thread_idx], Pp[Thread_idx].left, Pp[Thread_idx].top);
+                    client_ID[Thread_idx], Send_P->x, Send_P->y);
                 SetEvent(hRecvEvent);
                 EnterCriticalSection(&cs1);
-                step = 1;
+                step = Robby;
                 LeaveCriticalSection(&cs1);
             }
         }
-        /*else if (step == 1)
+        /*else if (step == Robby)
         {
             if (ThreadOn[0] && ThreadOn[1] && ThreadOn[2])
             {
@@ -84,47 +85,21 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                 }
                 break;
             }
-            step = 2;
+            step = InGame;
         }*/
-        else if (step == 2)
+        else if (step == InGame)
         {
-            /*printf("%d\n", CP);*/
             WaitForSingleObject(hSendEvent, INFINITY);
             EnterCriticalSection(&cs2);
-            if (CP >= ClientPacket::input_left && CP <= ClientPacket::input_bottom)
-            {
-                Pp[SendPacket_Idx].type = 1;
-                printf("보내는 type 값 : %d\n", Pp[SendPacket_Idx].type);
-                retval = send(client_sock, (char*)&Pp[SendPacket_Idx].type, sizeof(Pp[SendPacket_Idx].type), 0);
-                if (retval == SOCKET_ERROR) {
-                    m_SF.err_display("send()");
-                    break;
-                }
-                printf("보내는 type 값 : %d\n", Pp[SendPacket_Idx].type);
-                retval = send(client_sock, (char*)&Pp[SendPacket_Idx], sizeof(Pp[SendPacket_Idx]), 0);
-                if (retval == SOCKET_ERROR) {
-                    m_SF.err_display("send()");
-                    break;
-                }
-                printf("Send [%d] S->C: %d %d\n", ntohs(clientaddr.sin_port)
-                    , Pp[SendPacket_Idx].left, Pp[SendPacket_Idx].top);
+
+            retval = send(client_sock, (char*)&Send_P, sizeof(Send_P), 0);
+            if (retval == SOCKET_ERROR) {
+                m_SF.err_display("send()");
+                break;
             }
-            else if (CP == 16)
-            {
-                retval = send(client_sock, (char*)&Bp.type, sizeof(Bp.type), 0);
-                if (retval == SOCKET_ERROR) {
-                    m_SF.err_display("send()");
-                    break;
-                }
-                retval = send(client_sock, (char*)&Bp, sizeof(Bp), 0);
-                if (retval == SOCKET_ERROR) {
-                    m_SF.err_display("send()");
-                    break;
-                }
-                printf("Send [%d] %d: S->C: %d %d\n", ntohs(clientaddr.sin_port), SendPacket_Idx
-                    , Bp.left, Bp.top);
-            }
-            CP = ClientPacket::empty;
+            m_PF.InitPacket(Send_P);
+            printf("Send [%d] S->C: type = &d %d %d\n", ntohs(clientaddr.sin_port),
+                Send_P->type, Send_P->x, Send_P->y);
             
             LeaveCriticalSection(&cs2);
             SetEvent(hRecvEvent);
@@ -155,39 +130,35 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
     while (1) {
         // 클라이언트와 데이터 통신
 
-        if (step == 1)
+        if (step == Robby)
         {
             WaitForSingleObject(hRecvEvent, INFINITY);
-            retval = m_SF.recvn(client_sock, (char*)&P, sizeof(P), 0);
+            retval = m_SF.recvn(client_sock, (char*)&PT, sizeof(PT), 0);
             if (retval == SOCKET_ERROR) {
                 m_SF.err_display("recv()");
                 break;
             }
-            printf("Recv [%d] S<-C: %d = 시작 신호\n", ntohs(clientaddr.sin_port), P.type);
-            EnterCriticalSection(&cs1);
-            step = 2;
-            LeaveCriticalSection(&cs1);
+            printf("Recv [%d] S<-C: %d = 시작 신호\n", ntohs(clientaddr.sin_port), PT);
+            if (PT = start)
+            {
+                EnterCriticalSection(&cs1);
+                step = 2;
+                LeaveCriticalSection(&cs1);
+            }
         }
-        if (step == 2)
+        if (step == InGame)
         {
             WaitForSingleObject(hRecvEvent, INFINITY);
             EnterCriticalSection(&cs1);
-            retval = m_SF.recvn(client_sock, (char*)&CP, sizeof(CP), 0);
+            retval = m_SF.recvn(client_sock, (char*)&Recv_P, sizeof(Recv_P), 0);
             if (retval == SOCKET_ERROR) {
                 m_SF.err_display("recv()");
                 break;
             }
-
-            if (CP >= ClientPacket::input_left && CP <= ClientPacket::input_bottom)
-            {
-                m_PF.PlayerPacketProcess(m_Map,CP, &Pp[Thread_idx], client_ID[Thread_idx]);
-            }
-            else if (CP == ClientPacket::input_space)
-            {
-                m_PF.BubblePacketProcess(m_Map,CP, &Bp);
-            }
-            SendPacket_Idx = Thread_idx;
-            printf("Recv [%d] S<-C: %d\n", ntohs(clientaddr.sin_port), CP);
+            Send_P = Recv_P;
+            m_PF.InitPacket(Recv_P);
+            
+            printf("Recv [%d] S<-C: %d\n", ntohs(clientaddr.sin_port), Recv_P->type);
             LeaveCriticalSection(&cs1);
             SetEvent(hSendEvent);
         }
@@ -237,7 +208,6 @@ int main(int argc, char* argv[])
     int addrlen, i, j;
     HANDLE hRecvThread[3];
     HANDLE hSendThread[3];
-    int step = 0;
     int startsign = 0;
 
     int recv_ClientID = 0;
