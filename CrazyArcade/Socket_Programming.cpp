@@ -141,7 +141,8 @@ DWORD WINAPI SendClient(LPVOID arg)
     WaitForSingleObject(hSendEvent, INFINITE);
     printf("ClientPacket Send Value : %d\n", Send_Client_Packet);
     send(sock, (char*)&Send_Client_Packet, sizeof(ClientPacket), 0);
-    ResetEvent(hSendEvent);
+    delete Send_Client_Packet;
+    SetEvent(hSendEvent);
     if (GameState == 2)
     {
         while (1)
@@ -160,7 +161,8 @@ DWORD WINAPI SendClient(LPVOID arg)
             WaitForSingleObject(hSendEvent, INFINITE);
             printf("ClientPacket Send Value : %d\n", Send_Client_Packet);
             send(sock, (char*)&Send_Client_Packet, sizeof(ClientPacket), 0);
-            ResetEvent(hSendEvent);
+            delete Send_Client_Packet;
+            SetEvent(hSendEvent);
         }
     }
     return 0;

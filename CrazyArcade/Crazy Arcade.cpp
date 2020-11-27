@@ -293,9 +293,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM  lParam)
 				// 레디 패킷 보냄
 				WaitForSingleObject(hSendEvent, INFINITE);
 				Send_Client_Packet = new Packet(PacketType::ready);
-				SetEvent(hSendEvent);
 
-				SetEvent(hSendEvent);
 				CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Button_Off.ogg");
 				CSoundMgr::GetInstance()->PlayEffectSound2(L"SFX_Word_Start.ogg");
 				TextOn = TRUE;
@@ -1581,7 +1579,6 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 	// 플레이어 이동 패킷 생성 - 상태 아직 안보냄
 	WaitForSingleObject(hSendEvent,INFINITE);
 	Send_Client_Packet = new InputPacket(Client_Idx, tmpRECT.left, tmpRECT.top, 0);
-	SetEvent(hSendEvent);
 	InvalidateRect(hWnd, NULL, FALSE);
 }
 
@@ -2289,8 +2286,9 @@ void KEY_DOWN_P1(HWND hWnd)
 									Tile_Bubble1[i] = Tile[a][b];
 									// 물풍선 패킷 생성
 									WaitForSingleObject(hSendEvent, INFINITE);
-									Send_Client_Packet = new InputPacket(Tile[a][b].left, Tile[a][b].left, P1_Power);
-									SetEvent(hSendEvent);
+									if(!Send_Client_Packet)
+										Send_Client_Packet = new InputPacket(Tile[a][b].left, Tile[a][b].left, P1_Power);
+
 									return;
 								}
 							}
