@@ -4,19 +4,204 @@
 #include "CClientPacket.h"
 
 
-int client_ID[3] = { 0 };
+int client_ID[3] = { 1, 2, 3 };
+int ThreadOn[3] = { 0 };
 
 int Thread_Count;
 
 HANDLE hSendEvent;
 HANDLE hRecvEvent;
 
-Packet p;
-Packet temp;
 
-CRITICAL_SECTION cs;
+PlayerPacket Pp[3]; // 플레이어 정보 패킷
+BubblePacket Bp;    // 물풍선 정보 패킷
+ClientPacket CP;
+Packet P;
+
+CMap m_Map;
+
+CRITICAL_SECTION cs1, cs2;
 
 SocketFunc m_SF;
+PacketFunc m_PF;
+
+int step = 0;
+int SendPacket_Idx = 0;
+
+
+DWORD WINAPI SendThreadFunc(LPVOID arg)
+{
+    SOCKET client_sock = (SOCKET)arg;
+    int retval;
+    SOCKADDR_IN clientaddr;
+    int addrlen;
+    char buf[BUFSIZE + 1];
+
+    int len;
+
+    int Thread_idx = Thread_Count - 1;
+
+    int startsign = 0;
+
+    // 클라이언트 정보 얻기
+    addrlen = sizeof(clientaddr);
+    getpeername(client_sock, (SOCKADDR*)&clientaddr, &addrlen);
+
+    while (1) {
+        // 클라이언트와 데이터 통신
+        if (step == 0)
+        {
+            if (ThreadOn[Thread_idx])
+            {
+                WaitForSingleObject(hSendEvent, INFINITY);
+            
+                Pp[Thread_idx].idx_player = client_ID[Thread_idx];
+                if (client_ID[Thread_idx] == 1)
+                    Pp[Thread_idx].left = m_Map.Tile[0][0].left, Pp[Thread_idx].top = m_Map.Tile[0][0].top
+                    , Pp[Thread_idx].status = 1;
+                retval = send(client_sock, (char*)&Pp[Thread_idx], sizeof(Pp[Thread_idx]), 0);
+                if (retval == SOCKET_ERROR) {
+                    m_SF.err_display("send()");
+                    break;
+                }
+                printf("[TCP 서버] %d번 클라이언트 위치 전송 : %d %d\n",
+                    client_ID[Thread_idx], Pp[Thread_idx].left, Pp[Thread_idx].top);
+                SetEvent(hRecvEvent);
+                EnterCriticalSection(&cs1);
+                step = 1;
+                LeaveCriticalSection(&cs1);
+            }
+        }
+        /*else if (step == 1)
+        {
+            if (ThreadOn[0] && ThreadOn[1] && ThreadOn[2])
+            {
+                startsign = 1;
+                retval = send(client_sock, (char*)&startsign, sizeof(startsign), 0);
+                if (retval == SOCKET_ERROR) {
+                    m_SF.err_display("send()");
+                    break;
+                }
+                break;
+            }
+            step = 2;
+        }*/
+        else if (step == 2)
+        {
+            /*printf("%d\n", CP);*/
+            WaitForSingleObject(hSendEvent, INFINITY);
+            EnterCriticalSection(&cs2);
+            if (CP >= ClientPacket::input_left && CP <= ClientPacket::input_bottom)
+            {
+                Pp[SendPacket_Idx].type = 1;
+                printf("보내는 type 값 : %d\n", Pp[SendPacket_Idx].type);
+                retval = send(client_sock, (char*)&Pp[SendPacket_Idx].type, sizeof(Pp[SendPacket_Idx].type), 0);
+                if (retval == SOCKET_ERROR) {
+                    m_SF.err_display("send()");
+                    break;
+                }
+                printf("보내는 type 값 : %d\n", Pp[SendPacket_Idx].type);
+                retval = send(client_sock, (char*)&Pp[SendPacket_Idx], sizeof(Pp[SendPacket_Idx]), 0);
+                if (retval == SOCKET_ERROR) {
+                    m_SF.err_display("send()");
+                    break;
+                }
+                printf("Send [%d] S->C: %d %d\n", ntohs(clientaddr.sin_port)
+                    , Pp[SendPacket_Idx].left, Pp[SendPacket_Idx].top);
+            }
+            else if (CP == 16)
+            {
+                retval = send(client_sock, (char*)&Bp.type, sizeof(Bp.type), 0);
+                if (retval == SOCKET_ERROR) {
+                    m_SF.err_display("send()");
+                    break;
+                }
+                retval = send(client_sock, (char*)&Bp, sizeof(Bp), 0);
+                if (retval == SOCKET_ERROR) {
+                    m_SF.err_display("send()");
+                    break;
+                }
+                printf("Send [%d] %d: S->C: %d %d\n", ntohs(clientaddr.sin_port), SendPacket_Idx
+                    , Bp.left, Bp.top);
+            }
+            CP = ClientPacket::empty;
+            
+            LeaveCriticalSection(&cs2);
+            SetEvent(hRecvEvent);
+        }
+
+    }
+
+    return 0;
+}
+
+DWORD WINAPI RecvThreadFunc(LPVOID arg)
+{
+    SOCKET client_sock = (SOCKET)arg;
+    int retval;
+    SOCKADDR_IN clientaddr;
+    int addrlen;
+
+    int Thread_idx = Thread_Count - 1;
+
+    int recv_ClientID = 0; // 데이터를 서버로 보내는 클라의 ID 저장
+
+    int startsign = 0;
+
+    // 클라이언트 정보 얻기
+    addrlen = sizeof(clientaddr);
+    getpeername(client_sock, (SOCKADDR*)&clientaddr, &addrlen);
+
+    while (1) {
+        // 클라이언트와 데이터 통신
+
+        if (step == 1)
+        {
+            WaitForSingleObject(hRecvEvent, INFINITY);
+            retval = m_SF.recvn(client_sock, (char*)&P, sizeof(P), 0);
+            if (retval == SOCKET_ERROR) {
+                m_SF.err_display("recv()");
+                break;
+            }
+            printf("Recv [%d] S<-C: %d = 시작 신호\n", ntohs(clientaddr.sin_port), P.type);
+            EnterCriticalSection(&cs1);
+            step = 2;
+            LeaveCriticalSection(&cs1);
+        }
+        if (step == 2)
+        {
+            WaitForSingleObject(hRecvEvent, INFINITY);
+            EnterCriticalSection(&cs1);
+            retval = m_SF.recvn(client_sock, (char*)&CP, sizeof(CP), 0);
+            if (retval == SOCKET_ERROR) {
+                m_SF.err_display("recv()");
+                break;
+            }
+
+            if (CP >= ClientPacket::input_left && CP <= ClientPacket::input_bottom)
+            {
+                m_PF.PlayerPacketProcess(m_Map,CP, &Pp[Thread_idx], client_ID[Thread_idx]);
+            }
+            else if (CP == ClientPacket::input_space)
+            {
+                m_PF.BubblePacketProcess(m_Map,CP, &Bp);
+            }
+            SendPacket_Idx = Thread_idx;
+            printf("Recv [%d] S<-C: %d\n", ntohs(clientaddr.sin_port), CP);
+            LeaveCriticalSection(&cs1);
+            SetEvent(hSendEvent);
+        }
+
+    }
+    // closesocket()
+    closesocket(client_sock);
+    printf("[TCP 서버] %d번째 클라이언트 종료: IP 주소=%s, ID=%d\n",
+        client_ID[Thread_idx], inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
+    ThreadOn[Thread_idx] = FALSE;
+    Thread_Count = Thread_idx - 1;
+
+    return 0;
+}
 
 
 int main(int argc, char* argv[])
@@ -45,158 +230,61 @@ int main(int argc, char* argv[])
     retval = listen(listen_sock, SOMAXCONN);
     if (retval == SOCKET_ERROR) m_SF.err_quit("listen()");
 
-    u_long on = 1;
-    retval = ioctlsocket(listen_sock, FIONBIO, &on);
-    if (retval == SOCKET_ERROR) m_SF.err_display("ioctlsocket()");
-
     // 데이터 통신에 사용할 변수
-    FD_SET rset, wset;
     SOCKET client_sock;
     SOCKADDR_IN clientaddr;
     int addrlen, i, j;
-    HANDLE hThread[3];
+    HANDLE hRecvThread[3];
+    HANDLE hSendThread[3];
     int step = 0;
     int startsign = 0;
 
-    int recv_ClientID;
+    int recv_ClientID = 0;
 
-    hSendEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    hSendEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
     hRecvEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
-    InitializeCriticalSection(&cs);
+    InitializeCriticalSection(&cs1);
+    InitializeCriticalSection(&cs2);
 
     while (1) {
-        // 소켓 셋 초기화
-        FD_ZERO(&rset);
-        FD_ZERO(&wset);
-        FD_SET(listen_sock, &rset);
-        for (int i = 0; i < m_SF.nTotalSockets; i++) {
-            FD_SET(m_SF.SocketInfoArray[i]->sock, &rset);
-        }
-
-        // select()
-        retval = select(0, &rset, &wset, NULL, NULL);
-        if (retval == SOCKET_ERROR) m_SF.err_quit("select()");
-
-        // 소켓 셋 검사(1): 클라이언트 접속 수용
-        if (FD_ISSET(listen_sock, &rset)) {
+        if (Thread_Count < MAX_CLIENT)
+        {
+            // accept()
             addrlen = sizeof(clientaddr);
             client_sock = accept(listen_sock, (SOCKADDR*)&clientaddr, &addrlen);
             if (client_sock == INVALID_SOCKET) {
                 m_SF.err_display("accept()");
+                break;
             }
-            else {
-                printf("\n[TCP 서버] 클라이언트 접속: IP 주소=%s, 포트 번호=%d\n",
-                    inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
-                // 소켓 정보 추가
-                m_SF.AddSocketInfo(client_sock);
-                if (m_SF.nTotalSockets>0)
-                    client_ID[m_SF.nTotalSockets - 1] = m_SF.nTotalSockets;
-                printf("%d\n", m_SF.nTotalSockets);
-
-            }
-            if (step == 0)
-
+            else
             {
-                if (m_SF.nTotalSockets >= 2)
-                    startsign = 1;
-                for (i = 0; i < m_SF.nTotalSockets; i++) {
-                    FD_SET(m_SF.SocketInfoArray[i]->sock, &wset);
-                    SocketFunc::SOCKETINFO* ptr = m_SF.SocketInfoArray[i];
-                    if (FD_ISSET(ptr->sock, &wset)) {
-                        retval = send(ptr->sock, (char*)&startsign, sizeof(int), 0);
-                        if (retval == SOCKET_ERROR) {
-                            m_SF.err_display("send()");
-                            m_SF.RemoveSocketInfo(i);
-                            continue;
-                        }
-                    }
+                ThreadOn[Thread_Count] = TRUE;
+                Thread_Count++;
+                // 접속한 클라이언트 정보 출력
+                printf("\n[TCP 서버] %d번 클라이언트 접속: IP 주소=%s, 포트 번호=%d\n",
+                    Thread_Count, inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
+                m_Map.Init_Map();
+
+                // 스레드 생성
+                hSendThread[Thread_Count - 1] = CreateThread(NULL, 0, SendThreadFunc,
+                    (LPVOID)client_sock, 0, NULL);
+                hRecvThread[Thread_Count - 1] = CreateThread(NULL, 0, RecvThreadFunc,
+                    (LPVOID)client_sock, 0, NULL);
+                if (hRecvThread[Thread_Count - 1] == NULL && hSendThread[Thread_Count - 1] == NULL) {
+                    closesocket(client_sock);
                 }
-                if (m_SF.nTotalSockets >= 2)
-                {
-                    printf("%d\n", m_SF.nTotalSockets);
-                    step = 1;
+                else {
+                    CloseHandle(hRecvThread[Thread_Count - 1]);
+                    CloseHandle(hSendThread[Thread_Count - 1]);
                 }
+
             }
+
         }
-        // 소켓 셋 검사(2): 데이터 통신
-        if (step == 1) // 각 클라이언트에 ID 전송
-        {
-            for (i = 0; i < m_SF.nTotalSockets; i++) {
-                SocketFunc::SOCKETINFO* ptr = m_SF.SocketInfoArray[i];
-                if (FD_ISSET(ptr->sock, &wset)) {
-                    retval = send(ptr->sock, (char*)&client_ID[i], sizeof(int), 0);
-                    if (retval == SOCKET_ERROR) {
-                        m_SF.err_display("send()");
-                        m_SF.RemoveSocketInfo(i);
-                        continue;
-                    }
-                    else
-                    {
-                        printf("[TCP 서버] %d번 클라이언트 ID 전송 : %d\n",
-                            client_ID[i], ntohs(clientaddr.sin_port));
-
-                    }
-                }
-            }
-            step = 2;
-        }
-        else if (step == 2) // 데이터 주고 받음
-        {
-            for (i = 0; i < m_SF.nTotalSockets; i++) {
-                FD_SET(m_SF.SocketInfoArray[i]->sock, &rset);
-                SocketFunc::SOCKETINFO* ptr = m_SF.SocketInfoArray[i];
-                if (FD_ISSET(ptr->sock, &rset)) { 
-                    // 데이터 받기
-                    retval = m_SF.recvn(ptr->sock, (char*)&recv_ClientID, sizeof(recv_ClientID), 0);
-                    if (retval == SOCKET_ERROR) {
-                        m_SF.err_display("recv()");
-                        m_SF.RemoveSocketInfo(i);
-                        continue;
-                    }
-                    retval = m_SF.recvn(ptr->sock, (char*)&temp, sizeof(temp), 0);
-                    if (retval == SOCKET_ERROR) {
-                        m_SF.err_display("recv()");
-                        m_SF.RemoveSocketInfo(i);
-                        continue;
-                    }
-                    if (temp.type != 0)
-                    {
-                        EnterCriticalSection(&cs);
-                        p = temp;
-                        LeaveCriticalSection(&cs);
-                    }
-                    printf("ID: %d S<-C: %d\n", recv_ClientID, temp.type);
-
-
-                    // 현재 접속한 모든 클라이언트에게 데이터를 보냄!
-                    for (j = 0; j < m_SF.nTotalSockets; j++) {
-                        FD_SET(m_SF.SocketInfoArray[j]->sock, &wset);
-                        SocketFunc::SOCKETINFO* ptr2 = m_SF.SocketInfoArray[j];
-                        retval = send(ptr2->sock, (char*)&recv_ClientID, BUFSIZE, 0);
-                        if (retval == SOCKET_ERROR) {
-                            m_SF.err_display("send()");
-                            m_SF.RemoveSocketInfo(j);
-                            --j; // 루프 인덱스 보정
-                            continue;
-                        }
-                        retval = send(ptr2->sock, (char*)&p, BUFSIZE, 0);
-                        if (retval == SOCKET_ERROR) {
-                            m_SF.err_display("send()");
-                            m_SF.RemoveSocketInfo(j);
-                            --j; // 루프 인덱스 보정
-                            continue;
-                        }
-                        printf("ID: %d S->C: %d\n", client_ID[j], temp.type);
-
-                    }
-                    p.type = 0;
-                }
-            }
-        }
-        Sleep(1000);
     }
-    DeleteCriticalSection(&cs);
+    DeleteCriticalSection(&cs1);
+    DeleteCriticalSection(&cs2);
 
     // closesocket()
     closesocket(listen_sock);

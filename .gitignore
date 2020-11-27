@@ -12,3 +12,7 @@
 *.lastbuildstate
 *.suo
 *.db
+Debug/
+Release/
+CrazyArcade/Debug/
+CrazyArcade/Release/

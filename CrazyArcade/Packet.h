@@ -1,20 +1,53 @@
 #pragma once
+
+
+// ÀÌµ¿ = 1, ¹°Ç³¼± = 2
 struct Packet
 {
+	Packet(int type) { this->type = type; }
 	int type;
+};
+
+enum PacketType
+{
+	index,
+	start,
+	player,
+	item,
+	bubble,
+	ready,
+};
+
+struct InputPacket : public Packet
+{
+	InputPacket(int idx, int x, int y, u_short stat) :Packet(player) { idx_player = idx; this->x = x; this->y = y; status = stat; }
+	InputPacket(int x, int y, int power) :Packet(bubble) { this->x = x; this->y = y; this->power = power; }
+
+	int idx_player;
+	int power;
+	int x, y;
+	u_short status;
 };
 
 struct PlayerPacket : public Packet
 {
+	PlayerPacket(int idx, int x, int y, u_short stat):Packet(player) { idx_player = idx; this->x = x; this->y = y; status = stat; }	
 	int idx_player;
 	int x, y;
-	unsigned short status;
+	u_short status;
 };
 
 struct BubblePacket : public Packet
 {
 	int power;
 	int x, y;
+};
+
+
+struct ItemPacket : public Packet
+{
+	int x, y;
+	int value;
 };
 
 enum ClientPacket {

@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "SoundMgr.h"
 
 CSoundMgr* CSoundMgr::m_pInstance = NULL;
@@ -32,7 +32,7 @@ void CSoundMgr::ErrorCheck(FMOD_RESULT _result)
 {
 	if (_result != FMOD_OK)
 	{
-		cout << "¿À·ù" << endl;
+		cout << _result << endl;
 		return;
 	}
 }

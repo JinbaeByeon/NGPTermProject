@@ -153,13 +153,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Socket_Programming.cpp" />
     <ClCompile Include="Crazy Arcade.cpp" />
-    <ClCompile Include="SoundMgr.cpp" />
+    <ClCompile Include="SoundMgr.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Constant.h" />
     <ClInclude Include="Packet.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Socket_Programming.h" />
     <ClInclude Include="SoundMgr.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
