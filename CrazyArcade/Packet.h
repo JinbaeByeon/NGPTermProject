@@ -7,6 +7,16 @@ struct Packet
 	int type;
 };
 
+enum PacketType
+{
+	index,
+	start,
+	player,
+	item,
+	bubble,
+	ready,
+};
+
 struct InputPacket : public Packet
 {
 	InputPacket(int idx, int x, int y, u_short stat) :Packet(player) { idx_player = idx; this->x = x; this->y = y; status = stat; }
@@ -47,14 +57,4 @@ enum ClientPacket {
 	input_ctrl = 32,
 	state_dead = 64,
 	state_trapped = 128,
-};
-
-enum PacketType
-{
-	index,
-	start,
-	player,
-	item,
-	bubble,
-	ready,
 };

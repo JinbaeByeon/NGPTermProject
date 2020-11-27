@@ -1,6 +1,6 @@
 #include "Socket_Programming.h"
 #include "Packet.h"
-
+ 
 // 이벤트
 extern HANDLE hRecvEvent, hSendEvent, hConnectEvent, hPlayerEvent, hBubbleEvent;
 // 소켓
@@ -8,7 +8,7 @@ extern SOCKET sock;
 // 패킷
 extern PlayerPacket *Recv_Player_Packet;
 extern BubblePacket *Recv_Bubble_Packet;
-Packet* Send_Client_Packet;
+extern Packet* Send_Client_Packet;
 Packet *Recv_Packet_Type;
 // 불값
 extern BOOL Bubble_Arrive, Player_Arrive;
