@@ -35,7 +35,7 @@ void KEY_UP_P2(WPARAM wParam, HWND hWnd);
 
 // 소켓 프로그래밍 변수
 // 이벤트
-HANDLE hRecvEvent, hSendEvent, hConnectEvent, hBubbleEvent, hPlayerEvent;
+HANDLE hRecvEvent, hSendEvent, hConnectEvent, hBubbleEvent, hPlayerEvent, hInputEvent;
 // 소켓
 SOCKET sock;
 // 불 값
@@ -43,7 +43,7 @@ BOOL Bubble_Arrive = false, Player_Arrive = false;
 // 패킷
 PlayerPacket *Recv_Player_Packet;
 BubblePacket *Recv_Bubble_Packet;
-Packet* Send_Client_Packet;
+Packet* Send_Client_Packet = 0;
 int Client_Idx;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
@@ -85,6 +85,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 	if (hPlayerEvent == NULL) return 1;
 	hBubbleEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	if (hBubbleEvent == NULL) return 1;
+	hInputEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if (hInputEvent == NULL) return 1;
 
 	// 소켓 통신 스레드 생성
 	CreateThread(NULL, 0, SendClient, NULL, 0, NULL);
@@ -291,8 +293,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM  lParam)
 			if (Collision(GameStart, M_X, M_Y))
 			{
 				// 레디 패킷 보냄
-				WaitForSingleObject(hSendEvent, INFINITE);
 				Send_Client_Packet = new Packet(PacketType::ready);
+				SetEvent(hSendEvent);
 
 				CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Button_Off.ogg");
 				CSoundMgr::GetInstance()->PlayEffectSound2(L"SFX_Word_Start.ogg");
@@ -1579,6 +1581,7 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 	// 플레이어 이동 패킷 생성 - 상태 아직 안보냄
 	WaitForSingleObject(hSendEvent,INFINITE);
 	Send_Client_Packet = new InputPacket(Client_Idx, tmpRECT.left, tmpRECT.top, 0);
+	SetEvent(hInputEvent);
 	InvalidateRect(hWnd, NULL, FALSE);
 }
 
@@ -2288,6 +2291,7 @@ void KEY_DOWN_P1(HWND hWnd)
 									WaitForSingleObject(hSendEvent, INFINITE);
 									if(!Send_Client_Packet)
 										Send_Client_Packet = new InputPacket(Tile[a][b].left, Tile[a][b].left, P1_Power);
+									SetEvent(hInputEvent);
 
 									return;
 								}

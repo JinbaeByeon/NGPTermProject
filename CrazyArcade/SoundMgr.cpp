@@ -32,7 +32,7 @@ void CSoundMgr::ErrorCheck(FMOD_RESULT _result)
 {
 	if (_result != FMOD_OK)
 	{
-		cout << "¿À·ù" << endl;
+		cout << _result << endl;
 		return;
 	}
 }
