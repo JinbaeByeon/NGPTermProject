@@ -8,7 +8,7 @@ extern SOCKET sock;
 // 패킷
 extern InputPacket *Recv_Player_Packet;
 extern BubblePacket *Recv_Bubble_Packet;
-extern Packet* Send_Client_Packet;
+extern InputPacket* Send_Client_Packet;
 
 // 불값
 extern BOOL Bubble_Arrive, Player_Arrive;
@@ -142,9 +142,9 @@ DWORD WINAPI SendClient(LPVOID arg)
         while (1)
         {
             // 처음엔 로비 화면에서 클릭에 따라 전송, game state 가 ingame이면 break하는 형태
-            WaitForSingleObject(hSendEvent, INFINITE);
+            WaitForSingleObject(hInputEvent, INFINITE);
             printf("ClientPacket Send Value : %d\n", Send_Client_Packet->type);
-            send(sock, (char*)Send_Client_Packet, sizeof(Packet), 0);
+            send(sock, (char*)Send_Client_Packet, sizeof(InputPacket), 0);
             delete Send_Client_Packet;
             Send_Client_Packet = NULL;
             SetEvent(hSendEvent);
@@ -162,7 +162,7 @@ DWORD WINAPI SendClient(LPVOID arg)
         {
             WaitForSingleObject(hInputEvent, INFINITE);
             printf("ClientPacket Send Value : %d\n", Send_Client_Packet->type);
-            send(sock, (char*)&Send_Client_Packet, sizeof(Packet), 0);
+            send(sock, (char*)&Send_Client_Packet, sizeof(InputPacket), 0);
             delete Send_Client_Packet;
             Send_Client_Packet = NULL;
             SetEvent(hSendEvent);

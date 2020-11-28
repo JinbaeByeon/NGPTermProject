@@ -43,7 +43,7 @@ BOOL Bubble_Arrive = false, Player_Arrive = false;
 // 패킷
 InputPacket *Recv_Player_Packet;
 BubblePacket *Recv_Bubble_Packet;
-Packet* Send_Client_Packet = 0;
+InputPacket* Send_Client_Packet = 0;
 int Client_Idx;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
@@ -293,8 +293,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM  lParam)
 			if (Collision(GameStart, M_X, M_Y))
 			{
 				// 레디 패킷 보냄
-				Send_Client_Packet = new Packet(PacketType::ready);
-				SetEvent(hSendEvent);
+				Send_Client_Packet = new InputPacket(Client_Idx, 0, 0, 0);
+				Send_Client_Packet->type = ready;
+				SetEvent(hInputEvent);
 
 				CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Button_Off.ogg");
 				CSoundMgr::GetInstance()->PlayEffectSound2(L"SFX_Word_Start.ogg");
@@ -1573,6 +1574,7 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 	// 플레이어 이동 패킷 생성 - 상태 아직 안보냄
 	WaitForSingleObject(hSendEvent,INFINITE);
 	Send_Client_Packet = new InputPacket(Client_Idx, tmpRECT.left, tmpRECT.top, 0);
+	Send_Client_Packet->type = player;
 	SetEvent(hInputEvent);
 
 	WaitForSingleObject(hPlayerEvent, 10);
@@ -2288,8 +2290,11 @@ void KEY_DOWN_P1(HWND hWnd)
 									Tile_Bubble1[i] = Tile[a][b];
 									// 물풍선 패킷 생성
 									WaitForSingleObject(hSendEvent, INFINITE);
-									if(!Send_Client_Packet)
+									if (!Send_Client_Packet)
+									{
 										Send_Client_Packet = new InputPacket(Tile[a][b].left, Tile[a][b].left, P1_Power);
+										Send_Client_Packet->type = bubble;
+									}
 									SetEvent(hInputEvent);
 
 									return;
