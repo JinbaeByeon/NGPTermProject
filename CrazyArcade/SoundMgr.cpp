@@ -113,7 +113,7 @@ void CSoundMgr::PlaySound(TCHAR* pSoundKey)
 
 void CSoundMgr::PlayBGM(TCHAR* pSoundKey)
 {
-	map<TCHAR*, FMOD_SOUND*>::iterator iter;
+	/*map<TCHAR*, FMOD_SOUND*>::iterator iter;
 
 	iter = find_if(m_mapSound.begin(), m_mapSound.end(), CStringCmp(pSoundKey));
 
@@ -125,7 +125,7 @@ void CSoundMgr::PlayBGM(TCHAR* pSoundKey)
 	Result = FMOD_System_PlaySound(System, FMOD_CHANNEL_REUSE,
 		iter->second, 0, &BGM);
 
-	ErrorCheck(Result);
+	ErrorCheck(Result);*/
 }
 
 

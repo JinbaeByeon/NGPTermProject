@@ -302,7 +302,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM  lParam)
 				SetTimer(hWnd, 8, 750, (TIMERPROC)TimeProc_Text);
 				SetTimer(hwnd, Recv_Bubble, 750, (TIMERPROC)TimeProc_Recv_Bubble);
 				GameState = INGAME;
-				bSceneChange = true;	
+				bSceneChange = true;
 				if (SelectMap1)
 					Sel_Map = 0;
 				else

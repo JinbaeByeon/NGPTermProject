@@ -13,8 +13,8 @@ HANDLE hSendEvent;
 HANDLE hRecvEvent;
 
 
-InputPacket *Send_P;
-InputPacket *Recv_P;
+InputPacket Send_P;
+InputPacket Recv_P;
 PacketType PT;
 
 CMap m_Map;
@@ -46,8 +46,8 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
     addrlen = sizeof(clientaddr);
     getpeername(client_sock, (SOCKADDR*)&clientaddr, &addrlen);
 
-    m_PF.InitPacket(Send_P);
-    m_PF.InitPacket(Recv_P);
+    m_PF.InitPacket(&Send_P);
+    m_PF.InitPacket(&Recv_P);
 
     while (1) {
         // 클라이언트와 데이터 통신
@@ -55,29 +55,26 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
         {
             if (ThreadOn[Thread_idx])
             {
+                m_PF.InitPlayer(m_Map, &Send_P, Thread_idx);
                 WaitForSingleObject(hSendEvent, INFINITY);
-            
-                m_PF.InitPlayer(m_Map, Send_P, Thread_idx);
-
-                retval = send(client_sock, (char*)&Send_P, sizeof(Send_P), 0);
+                retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
                 if (retval == SOCKET_ERROR) {
                     m_SF.err_display("send()");
                     break;
                 }
 
                 printf("[TCP 서버] %d번 클라이언트 위치 전송 : %d %d\n",
-                    client_ID[Thread_idx], Send_P->x, Send_P->y);
+                    client_ID[Thread_idx], Send_P.x, Send_P.y);
                 SetEvent(hRecvEvent);
                 EnterCriticalSection(&cs1);
                 step = Robby;
                 LeaveCriticalSection(&cs1);
             }
         }
-        /*else if (step == Robby)
+       /* else if (step == Robby)
         {
-            if (ThreadOn[0] && ThreadOn[1] && ThreadOn[2])
+            if (ThreadOn[0])
             {
-                startsign = 1;
                 retval = send(client_sock, (char*)&startsign, sizeof(startsign), 0);
                 if (retval == SOCKET_ERROR) {
                     m_SF.err_display("send()");
@@ -91,18 +88,16 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
         {
             WaitForSingleObject(hSendEvent, INFINITY);
             EnterCriticalSection(&cs2);
-
-            retval = send(client_sock, (char*)&Send_P, sizeof(Send_P), 0);
+            retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
             if (retval == SOCKET_ERROR) {
                 m_SF.err_display("send()");
                 break;
             }
-            m_PF.InitPacket(Send_P);
-            printf("Send [%d] S->C: type = &d %d %d\n", ntohs(clientaddr.sin_port),
-                Send_P->type, Send_P->x, Send_P->y);
-            
-            LeaveCriticalSection(&cs2);
+            printf("Send [%d] S->C: type = %d %d %d\n", ntohs(clientaddr.sin_port),
+                Send_P.type, Send_P.x, Send_P.y);
             SetEvent(hRecvEvent);
+            m_PF.InitPacket(&Send_P);
+            LeaveCriticalSection(&cs2);
         }
 
     }
@@ -139,27 +134,27 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
                 break;
             }
             printf("Recv [%d] S<-C: %d = 시작 신호\n", ntohs(clientaddr.sin_port), PT);
-            if (PT = start)
+            if (PT == ready)
             {
                 EnterCriticalSection(&cs1);
-                step = 2;
+                step = InGame;
                 LeaveCriticalSection(&cs1);
             }
         }
         if (step == InGame)
         {
             WaitForSingleObject(hRecvEvent, INFINITY);
-            EnterCriticalSection(&cs1);
-            retval = m_SF.recvn(client_sock, (char*)&Recv_P, sizeof(Recv_P), 0);
+            retval = m_SF.recvn(client_sock, (char*)&Recv_P, sizeof(InputPacket), 0);
             if (retval == SOCKET_ERROR) {
                 m_SF.err_display("recv()");
                 break;
             }
+            printf("Recv [%d] S<-C: %d\n", ntohs(clientaddr.sin_port), Recv_P.x);
+            EnterCriticalSection(&cs2);
             Send_P = Recv_P;
-            m_PF.InitPacket(Recv_P);
-            
-            printf("Recv [%d] S<-C: %d\n", ntohs(clientaddr.sin_port), Recv_P->type);
-            LeaveCriticalSection(&cs1);
+            printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>%d\n", Send_P.x);
+            m_PF.InitPacket(&Recv_P);
+            LeaveCriticalSection(&cs2);
             SetEvent(hSendEvent);
         }
 
@@ -259,7 +254,6 @@ int main(int argc, char* argv[])
 
     // closesocket()
     closesocket(listen_sock);
-
 
     // 윈속 종료
     WSACleanup();

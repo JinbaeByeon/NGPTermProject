@@ -74,6 +74,7 @@ DWORD WINAPI RecvClient(LPVOID arg)
     
 
     // 커넥트 이후 자신의 플레이어 패킷 수신
+    printf("여기\n");
     retval = recvn(sock, buf, sizeof(InputPacket), 0);
     buf[retval] = '\0';
     Recv_Player_Packet = (InputPacket*)buf;
@@ -86,6 +87,7 @@ DWORD WINAPI RecvClient(LPVOID arg)
     Player1.top = Recv_Player_Packet->y;
     Player1.right = Player1.left + Player_CX;
     Player1.bottom = Player1.top + Player_CY;
+    printf("%d, %d\n", Player1.left, Player1.top);
 
 
     // 데이터 통신에 쓰일 while, 이 위에 처음 서버와 연결했을 때의 패킷을 받아오는 작업 필요
@@ -140,7 +142,7 @@ DWORD WINAPI SendClient(LPVOID arg)
         while (1)
         {
             // 처음엔 로비 화면에서 클릭에 따라 전송, game state 가 ingame이면 break하는 형태
-            WaitForSingleObject(hInputEvent, INFINITE);
+            WaitForSingleObject(hSendEvent, INFINITE);
             printf("ClientPacket Send Value : %d\n", Send_Client_Packet->type);
             send(sock, (char*)Send_Client_Packet, sizeof(Packet), 0);
             delete Send_Client_Packet;
@@ -160,7 +162,7 @@ DWORD WINAPI SendClient(LPVOID arg)
         {
             WaitForSingleObject(hInputEvent, INFINITE);
             printf("ClientPacket Send Value : %d\n", Send_Client_Packet->type);
-            send(sock, (char*)Send_Client_Packet, sizeof(Packet), 0);
+            send(sock, (char*)&Send_Client_Packet, sizeof(Packet), 0);
             delete Send_Client_Packet;
             Send_Client_Packet = NULL;
             SetEvent(hSendEvent);

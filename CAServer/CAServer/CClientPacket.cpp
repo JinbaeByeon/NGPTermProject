@@ -29,16 +29,17 @@
 
 void PacketFunc::InitPlayer(CMap m_Map, InputPacket *Send_P, int idx)
 {
-    Send_P->idx_player = idx;
-    if (idx == 1)
+    printf("¿©±â\n");
+    if (idx == 0)
+        //Send_P = &InputPacket(idx, m_Map.Tile[0][0].left, m_Map.Tile[0][0].left, 1);
         Send_P->x = m_Map.Tile[0][0].left, Send_P->y = m_Map.Tile[0][0].top
-        , Send_P->status = 1;
+        , Send_P->status = 0;
+    else if (idx == 1)
+        Send_P->x = m_Map.Tile[0][0].left, Send_P->y = m_Map.Tile[0][0].top
+        , Send_P->status = 0;
     else if (idx == 2)
         Send_P->x = m_Map.Tile[0][0].left, Send_P->y = m_Map.Tile[0][0].top
-        , Send_P->status = 1;
-    else if (idx == 3)
-        Send_P->x = m_Map.Tile[0][0].left, Send_P->y = m_Map.Tile[0][0].top
-        , Send_P->status = 1;
+        , Send_P->status = 0;
 }
 
 void PacketFunc::InitPacket(InputPacket* P)
