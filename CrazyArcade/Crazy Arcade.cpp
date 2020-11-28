@@ -41,7 +41,7 @@ SOCKET sock;
 // 불 값
 BOOL Bubble_Arrive = false, Player_Arrive = false;
 // 패킷
-PlayerPacket *Recv_Player_Packet;
+InputPacket *Recv_Player_Packet;
 BubblePacket *Recv_Bubble_Packet;
 Packet* Send_Client_Packet = 0;
 int Client_Idx;
@@ -1435,14 +1435,6 @@ void CALLBACK TimeProc_Bubble_Flow(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwT
 
 void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
-	SetEvent(hSendEvent);
-	WaitForSingleObject(hPlayerEvent, 10);
-	Player1.left = Recv_Player_Packet->x;
-	Player1.right = Player1.left + Player_CX;
-	Player1.top = Recv_Player_Packet->y;
-	Player1.bottom = Recv_Player_Packet->y + Player_CY;
-	ResetEvent(hPlayerEvent);
-
 	RECT tmpRECT = Player1;
 	switch (yPos_P1) {
 	case LEFT:
@@ -1582,6 +1574,13 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 	WaitForSingleObject(hSendEvent,INFINITE);
 	Send_Client_Packet = new InputPacket(Client_Idx, tmpRECT.left, tmpRECT.top, 0);
 	SetEvent(hInputEvent);
+
+	WaitForSingleObject(hPlayerEvent, 10);
+	Player1.left = Recv_Player_Packet->x;
+	Player1.right = Player1.left + Player_CX;
+	Player1.top = Recv_Player_Packet->y;
+	Player1.bottom = Recv_Player_Packet->y + Player_CY;
+
 	InvalidateRect(hWnd, NULL, FALSE);
 }
 

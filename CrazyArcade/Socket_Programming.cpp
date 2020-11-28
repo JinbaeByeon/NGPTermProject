@@ -6,10 +6,10 @@ extern HANDLE hRecvEvent, hSendEvent, hConnectEvent, hPlayerEvent, hBubbleEvent,
 // 소켓
 extern SOCKET sock;
 // 패킷
-extern PlayerPacket *Recv_Player_Packet;
+extern InputPacket *Recv_Player_Packet;
 extern BubblePacket *Recv_Bubble_Packet;
 extern Packet* Send_Client_Packet;
-Packet *Recv_Packet_Type;
+
 // 불값
 extern BOOL Bubble_Arrive, Player_Arrive;
 //핸들값
@@ -72,10 +72,11 @@ DWORD WINAPI RecvClient(LPVOID arg)
     else
         MessageBox(hwnd, L"연결됨", L"연결됨?", MB_OK);
     
+
     // 커넥트 이후 자신의 플레이어 패킷 수신
-    retval = recvn(sock, buf, sizeof(PlayerPacket), 0);
+    retval = recvn(sock, buf, sizeof(InputPacket), 0);
     buf[retval] = '\0';
-    Recv_Player_Packet = (PlayerPacket*)buf;
+    Recv_Player_Packet = (InputPacket*)buf;
     SetEvent(hConnectEvent);    //connect가 끝나면 송신에서도 변수 사용가능하다는 이벤트 발생시킨다.
     printf("야 위치 받았다. %d %d\n\n", Recv_Player_Packet->x, Recv_Player_Packet->y);
     printf("Packet ID : %d\nPacket x : %d\nPacket y : %d\nPacket type : %d\n", Recv_Player_Packet->idx_player, Recv_Player_Packet->x, Recv_Player_Packet->y, Recv_Player_Packet->type);
@@ -94,32 +95,27 @@ DWORD WINAPI RecvClient(LPVOID arg)
             // 다른 플레이어가 접속한다면 받아온다.
             //retval = recvn(sock, buf, sizeof(PlayerPacket), 0);
             //buf[retval] = '\0';
-            Recv_Player_Packet = (PlayerPacket*)buf;
+            //Recv_Player_Packet = (InputPacket*)buf;
         }
         else if (GameState == 3)
         {
-            retval = recvn(sock, buf, sizeof(Packet), 0);
+            retval = recvn(sock, buf, sizeof(InputPacket), 0);
             buf[retval] = '\0';
-            Recv_Packet_Type = (PlayerPacket*)buf;
-            printf("%d 번 패킷 수신\n\n", Recv_Packet_Type->type);
-            if (Recv_Packet_Type->type == 0 || Recv_Packet_Type->type == 1)
+            Recv_Player_Packet = (InputPacket*)buf;
+            printf("%d 타입 패킷 수신\n\n", Recv_Player_Packet->type);
+            if (Recv_Player_Packet->type == player)
             {
-                printf("여기까지는 넘어왔다\n");
-                retval = recvn(sock, buf, sizeof(PlayerPacket), 0);
-                buf[retval] = '\0';
-                Recv_Player_Packet = (PlayerPacket*)buf;
-                printf("받았다? %d, %d\n", Recv_Player_Packet->x, Recv_Player_Packet->y);
+                printf("플레이어 패킷 수신 -> idx : %d, x : %d, y : %d, status : %d\n", Recv_Player_Packet->idx_player, Recv_Player_Packet->x, Recv_Player_Packet->y, Recv_Player_Packet->status);
                 SetEvent(hPlayerEvent);
                 Player_Arrive = true;
+                // 데이터 받은거 처리 부분 구현 필요
             }
-            else if (Recv_Packet_Type->type == 16)
+            else if (Recv_Player_Packet->type == bubble)
             {
-                retval = recvn(sock, buf, sizeof(BubblePacket), 0);
-                buf[retval] = '\0';
-                Recv_Bubble_Packet = (BubblePacket*)buf; 
                 SetEvent(hBubbleEvent);
-                printf("Power : %d\nX : %d Y : %d\n\n", Recv_Bubble_Packet->power, Recv_Bubble_Packet->x, Recv_Bubble_Packet->y);
+                printf("버블 패킷 수신 -> Power : %d x : %d y : %d\n", Recv_Player_Packet->power, Recv_Player_Packet->x, Recv_Player_Packet->y);
                 Bubble_Arrive = true;
+                // 데이터 받은거 처리 부분 구현 필요
             }
 
         }
@@ -138,17 +134,19 @@ DWORD WINAPI RecvClient(LPVOID arg)
 DWORD WINAPI SendClient(LPVOID arg)
 {
     WaitForSingleObject(hConnectEvent, INFINITE);   // RecvClient에서 Connect 될 때까지 wait
-    // 처음엔 로비 화면에서 클릭에 따라 전송, game state 가 ingame이면 break하는 형태
-    WaitForSingleObject(hSendEvent, INFINITE);
-    printf("ClientPacket Send Value : %d\n", Send_Client_Packet->type);
-    send(sock, (char*)Send_Client_Packet, sizeof(ClientPacket), 0);
-    delete Send_Client_Packet;
-    Send_Client_Packet = NULL;
 
     if (GameState == 2)
     {
         while (1)
         {
+            // 처음엔 로비 화면에서 클릭에 따라 전송, game state 가 ingame이면 break하는 형태
+            WaitForSingleObject(hInputEvent, INFINITE);
+            printf("ClientPacket Send Value : %d\n", Send_Client_Packet->type);
+            send(sock, (char*)Send_Client_Packet, sizeof(Packet), 0);
+            delete Send_Client_Packet;
+            Send_Client_Packet = NULL;
+            SetEvent(hSendEvent);
+
             if (GameState == 3)
             {
                 break;
@@ -162,7 +160,7 @@ DWORD WINAPI SendClient(LPVOID arg)
         {
             WaitForSingleObject(hInputEvent, INFINITE);
             printf("ClientPacket Send Value : %d\n", Send_Client_Packet->type);
-            send(sock, (char*)Send_Client_Packet, sizeof(ClientPacket), 0);
+            send(sock, (char*)Send_Client_Packet, sizeof(Packet), 0);
             delete Send_Client_Packet;
             Send_Client_Packet = NULL;
             SetEvent(hSendEvent);
