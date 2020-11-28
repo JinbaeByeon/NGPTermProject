@@ -44,10 +44,10 @@ void PacketFunc::InitPlayer(CMap m_Map, InputPacket *Send_P, int idx)
 
 void PacketFunc::InitPacket(InputPacket* P)
 {
-    P->idx_player = 0;
-    P->power = 0;
-    P->status = 0;
-    P->x = 0;
-    P->y = 0;
-    P->power = 0;
+    P->idx_player = NULL;
+    P->power = NULL;
+    P->status = NULL;
+    P->x = NULL;
+    P->y = NULL;
+    P->power = NULL;
 }

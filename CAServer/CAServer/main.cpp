@@ -15,7 +15,6 @@ HANDLE hRecvEvent;
 
 InputPacket Send_P;
 InputPacket Recv_P;
-PacketType PT;
 
 CMap m_Map;
 
@@ -26,6 +25,7 @@ PacketFunc m_PF;
 
 int step = Accept; // 게임 흐름
 int SendPacket_Idx = 0;
+int count = 0;
 
 
 DWORD WINAPI SendThreadFunc(LPVOID arg)
@@ -55,8 +55,8 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
         {
             if (ThreadOn[Thread_idx])
             {
+                WaitForSingleObject(hSendEvent, INFINITE);
                 m_PF.InitPlayer(m_Map, &Send_P, Thread_idx);
-                WaitForSingleObject(hSendEvent, INFINITY);
                 retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
                 if (retval == SOCKET_ERROR) {
                     m_SF.err_display("send()");
@@ -65,28 +65,20 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
 
                 printf("[TCP 서버] %d번 클라이언트 위치 전송 : %d %d\n",
                     client_ID[Thread_idx], Send_P.x, Send_P.y);
-                SetEvent(hRecvEvent);
                 EnterCriticalSection(&cs1);
                 step = Robby;
                 LeaveCriticalSection(&cs1);
+                SetEvent(hRecvEvent);
             }
         }
-       /* else if (step == Robby)
+        else if (step == Robby)
         {
-            if (ThreadOn[0])
-            {
-                retval = send(client_sock, (char*)&startsign, sizeof(startsign), 0);
-                if (retval == SOCKET_ERROR) {
-                    m_SF.err_display("send()");
-                    break;
-                }
-                break;
-            }
-            step = InGame;
-        }*/
+            //printf("신호대기중...\n");
+        }
         else if (step == InGame)
         {
-            WaitForSingleObject(hSendEvent, INFINITY);
+
+            WaitForSingleObject(hSendEvent, INFINITE);
             EnterCriticalSection(&cs2);
             retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
             if (retval == SOCKET_ERROR) {
@@ -95,9 +87,9 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
             }
             printf("Send [%d] S->C: type = %d %d %d\n", ntohs(clientaddr.sin_port),
                 Send_P.type, Send_P.x, Send_P.y);
-            SetEvent(hRecvEvent);
             m_PF.InitPacket(&Send_P);
             LeaveCriticalSection(&cs2);
+            SetEvent(hRecvEvent);
         }
 
     }
@@ -127,34 +119,36 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
 
         if (step == Robby)
         {
-            WaitForSingleObject(hRecvEvent, INFINITY);
-            retval = m_SF.recvn(client_sock, (char*)&PT, sizeof(PT), 0);
+            WaitForSingleObject(hRecvEvent, INFINITE);
+            retval = m_SF.recvn(client_sock, (char*)&Recv_P, sizeof(Recv_P), 0);
             if (retval == SOCKET_ERROR) {
                 m_SF.err_display("recv()");
                 break;
             }
-            printf("Recv [%d] S<-C: %d = 시작 신호\n", ntohs(clientaddr.sin_port), PT);
-            if (PT == ready)
+            printf("Recv [%d] S<-C: %d = 시작 신호\n", ntohs(clientaddr.sin_port), Recv_P.type);
+            if (Recv_P.type == ready)
             {
                 EnterCriticalSection(&cs1);
                 step = InGame;
+                m_PF.InitPacket(&Recv_P);
                 LeaveCriticalSection(&cs1);
+                SetEvent(hRecvEvent);
             }
         }
         if (step == InGame)
         {
-            WaitForSingleObject(hRecvEvent, INFINITY);
+            WaitForSingleObject(hRecvEvent, INFINITE);
+            EnterCriticalSection(&cs2);
             retval = m_SF.recvn(client_sock, (char*)&Recv_P, sizeof(InputPacket), 0);
             if (retval == SOCKET_ERROR) {
                 m_SF.err_display("recv()");
                 break;
             }
             printf("Recv [%d] S<-C: %d\n", ntohs(clientaddr.sin_port), Recv_P.x);
-            EnterCriticalSection(&cs2);
             Send_P = Recv_P;
-            printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>%d\n", Send_P.x);
             m_PF.InitPacket(&Recv_P);
             LeaveCriticalSection(&cs2);
+            printf("여기\n");
             SetEvent(hSendEvent);
         }
 
