@@ -13,11 +13,13 @@ extern InputPacket* Send_Client_Packet;
 extern HWND hwnd;
 // 플레이어
 extern RECT Player1, Player2;
+extern RECT Player[MAX_PLAYER];
 // 게임 스테이트 enum GAME_BG { MENU = 1, ROBBY = 2, INGAME = 3};
 extern int GameState;
 extern const int Player_CX = 34;
 extern const int Player_CY = 34;
 extern int Client_Idx;
+extern int nPlayer;
 
 
 int recvn(SOCKET s, char* buf, int len, int flags)
@@ -83,12 +85,12 @@ DWORD WINAPI RecvClient(LPVOID arg)
     printf("야 위치 받았다. %d %d\n\n", Recv_Player_Packet->x, Recv_Player_Packet->y);
     printf("Packet ID : %d\nPacket x : %d\nPacket y : %d\nPacket type : %d\n", Recv_Player_Packet->idx_player, Recv_Player_Packet->x, Recv_Player_Packet->y, Recv_Player_Packet->type);
     Client_Idx = Recv_Player_Packet->idx_player;
+    nPlayer = Client_Idx + 1;
     // 자기 자신의 위치 저장
-    Player1.left = Recv_Player_Packet->x;
-    Player1.top = Recv_Player_Packet->y;
-    Player1.right = Player1.left + Player_CX;
-    Player1.bottom = Player1.top + Player_CY;
-    printf("%d, %d\n", Player1.left, Player1.top);
+    Player[Client_Idx].left = Recv_Player_Packet->x;
+    Player[Client_Idx].top = Recv_Player_Packet->y;
+    Player[Client_Idx].right = Player[Client_Idx].left + Player_CX;
+    Player[Client_Idx].bottom = Player[Client_Idx].top + Player_CY;
 
 
     // 데이터 통신에 쓰일 while, 이 위에 처음 서버와 연결했을 때의 패킷을 받아오는 작업 필요
@@ -131,7 +133,7 @@ DWORD WINAPI RecvClient(LPVOID arg)
             else if (Recv_Player_Packet->type == bubble)
             {
                 SetEvent(hBubbleEvent);
-                printf("버블 패킷 수신 -> Power : %d x : %d y : %d\n\n", Recv_Player_Packet->power, Recv_Player_Packet->x, Recv_Player_Packet->y);
+                printf("버블 패킷 수신 -> type : %d x : %d y : %d\n\n", Recv_Player_Packet->type, Recv_Player_Packet->x, Recv_Player_Packet->y);
                 // 데이터 받은거 처리 부분 구현 필요
                 // 지금은 버블 생성하고 패킷 보내는 형식으로 진행되는데 이걸 보낸 뒤에 버블 패킷 받고 생성하는걸로 수정 필요
             }

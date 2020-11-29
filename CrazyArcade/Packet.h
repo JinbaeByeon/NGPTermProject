@@ -1,4 +1,6 @@
 #pragma once
+#define MAX_PLAYER 4
+
 
 // ÀÌµ¿ = 1, ¹°Ç³¼± = 2
 struct Packet
@@ -20,17 +22,16 @@ enum PacketType
 struct InputPacket : public Packet
 {
 	InputPacket(int idx, int x, int y, u_short stat) :Packet(player) { idx_player = idx; this->x = x; this->y = y; status = stat; }
-	InputPacket(int x, int y, int power) :Packet(bubble) { this->x = x; this->y = y; this->power = power; }
+	InputPacket(int idx, int x, int y) :Packet(bubble) { this->x = x; this->y = y; this->idx_player = idx; }
 
 	int idx_player;
-	int power;
 	int x, y;
-	u_short status;
+	u_short status = 0;
 };
 
 struct PlayerPacket : public Packet
 {
-	PlayerPacket(int idx, int x, int y, u_short stat):Packet(player) { idx_player = idx; this->x = x; this->y = y; status = stat; }	
+	PlayerPacket(int idx, int x, int y, u_short stat) :Packet(player) { idx_player = idx; this->x = x; this->y = y; status = stat; }
 	int idx_player;
 	int x, y;
 	u_short status;
@@ -41,6 +42,7 @@ struct BubblePacket : public Packet
 	int power;
 	int x, y;
 };
+
 
 struct ItemPacket : public Packet
 {
