@@ -49,27 +49,26 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
     m_PF.InitPacket(&Send_P);
     m_PF.InitPacket(&Recv_P);
 
+    if (ThreadOn[Thread_idx])
+    {
+        m_PF.InitPlayer(m_Map, &Send_P, Thread_idx);
+        retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
+        if (retval == SOCKET_ERROR) {
+            m_SF.err_display("send()");
+        }
+
+        printf("[TCP 서버] %d번 클라이언트 위치 전송 : %d %d\n",
+            client_ID[Thread_idx], Send_P.x, Send_P.y);
+        EnterCriticalSection(&cs1);
+        step = Robby;
+        LeaveCriticalSection(&cs1);
+        SetEvent(hRecvEvent);
+    }
+
     while (1) {
         // 클라이언트와 데이터 통신
         if (step == Accept)
         {
-            if (ThreadOn[Thread_idx])
-            {
-                WaitForSingleObject(hSendEvent, INFINITE);
-                m_PF.InitPlayer(m_Map, &Send_P, Thread_idx);
-                retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
-                if (retval == SOCKET_ERROR) {
-                    m_SF.err_display("send()");
-                    break;
-                }
-
-                printf("[TCP 서버] %d번 클라이언트 위치 전송 : %d %d\n",
-                    client_ID[Thread_idx], Send_P.x, Send_P.y);
-                EnterCriticalSection(&cs1);
-                step = Robby;
-                LeaveCriticalSection(&cs1);
-                SetEvent(hRecvEvent);
-            }
         }
         else if (step == Robby)
         {
