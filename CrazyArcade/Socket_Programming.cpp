@@ -179,7 +179,7 @@ DWORD WINAPI SendClient(LPVOID arg)
         {
             WaitForSingleObject(hInputEvent, INFINITE);
             printf("플레이어 패킷 송신 -> type : %d idx : %d, x : %d, y : %d, status : %d\n",Send_Client_Packet->type, Send_Client_Packet->idx_player, Send_Client_Packet->x, Send_Client_Packet->y, Send_Client_Packet->status);
-            send(sock, (char*)&Send_Client_Packet, sizeof(InputPacket), 0);
+            send(sock, (char*)Send_Client_Packet, sizeof(InputPacket), 0);
             delete Send_Client_Packet;
             Send_Client_Packet = NULL;
             SetEvent(hSendEvent);
