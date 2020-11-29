@@ -16,10 +16,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
 void CALLBACK TimeProc_Bubble_BfBoom(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 void CALLBACK TimeProc_Bubble_Flow(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
-void CALLBACK TimeProc_P2_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
+
 void CALLBACK TimeProc_InBubble(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 void CALLBACK TimeProc_Die(HWND hWnd, UINT uMsg, UINT ideEvent, DWORD dwTime);
-void CALLBACK TimeProc_Monster_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
+
 void CALLBACK TimeProc_Text(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 void CALLBACK TimeProc_Recv_Bubble(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 void SetPos();
@@ -30,8 +30,6 @@ BOOL InBubble_Collision(RECT rt, int t, int l, int b, int r);
 BOOL Collision(RECT rect, int x, int y);
 void KEY_DOWN_P1(HWND hWnd);
 void KEY_UP_P1(WPARAM wParam, HWND hWnd);
-void KEY_DOWN_P2(HWND hWnd);
-void KEY_UP_P2(WPARAM wParam, HWND hWnd);
 
 // 소켓 프로그래밍 변수
 // 이벤트
@@ -43,8 +41,11 @@ BOOL Bubble_Arrive = false, Player_Arrive = false;
 // 패킷
 PlayerPacket *Recv_Player_Packet;
 BubblePacket *Recv_Bubble_Packet;
+
+Packet* Recv_Packet = 0;
 Packet* Send_Client_Packet = 0;
 int Client_Idx;
+int nPlayer = 0;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
@@ -107,7 +108,7 @@ enum Player_Position { LEFT = 3, RIGHT = 2, UP = 0, DOWN = 1 };
 enum Monster_Position { M_DOWN, M_LEFT, M_RIGHT, M_UP, M_DIE, M_REMOVE };
 enum GAME_BG { MENU = 1, ROBBY, INGAME };
 enum Item { Ball = 1, OnePower = 6, Speed = 11, MaxPower = 16, RedDevil = 21};
-enum Timer { Bubble_BfBoom, Bubble_Flow, P1, P2, In_Bubble, Die, Monster_Move, Recv_Bubble };
+enum Timer { P1 = 0, P2 = 1, P3 = 2, P4 = 3, Bubble_BfBoom, Bubble_Flow, In_Bubble, Die, Monster_Move, Recv_Bubble };
 
 int GameState = MENU;
 int ItemValue;
@@ -116,6 +117,8 @@ int Itemset[2][13][15];
 HDC hdc;
 HBITMAP hBit;         // 여기에 그려서 memdc -> hdc 에 넣음
 HBITMAP P1_Bit, P2_Bit, BGBit_InGame;
+HBITMAP Player_Bit[4];
+
 HBITMAP TileBit, Tile_Enable, Tile_Disable;
 HBITMAP Box_Bit0, Box_Bit1, Box_Bit2;
 HBITMAP House_Bit0, House_Bit1, House_Bit2, TreeBit;
@@ -123,18 +126,31 @@ HBITMAP Mon1Bit, Mon2Bit;
 HBITMAP Bubble, Bubble_Bomb;
 HBITMAP LogoMenu, LogoStart;
 HBITMAP LOBBY, VIL, BOSS, MAP1, MAP2;
-HBITMAP P1_NIDDLE_ON, P1_PIN_ON, P2_NIDDLE_ON, P2_PIN_ON;
-HBITMAP P1_NIDDLE_OFF, P1_PIN_OFF, P2_NIDDLE_OFF, P2_PIN_OFF;
+HBITMAP P1_NIDDLE_ON;
+HBITMAP P1_NIDDLE_OFF;
+
 HBITMAP Lobby_Start;
+
 HBITMAP P1_On, P2_On;
-HBITMAP P1_nOn, P2_nOn;
+HBITMAP Player_On;
+int Player_RobbyX[4];
+int Player_RobbyY[4];
+
+HBITMAP P1_nOn;
+
+
 HBITMAP Items;
 HBITMAP Tile2, Steel2, Stone2, Block2;
+
 RECT Crect;
+
 RECT Player1, Player2;
-RECT Monster1, Monster2;
+RECT Player[4];
+
 RECT Tile[13][15], Box[13][15];
 RECT Tile_Bubble1[7], Tile_Bubble2[7];	//P1의 물풍선 좌표저장, P2의 물풍선 좌표저장
+RECT Tile_Bubble[4][7];
+
 RECT Temp;	//Intersectrect에 사용 할 임시 RECT	
 
 
@@ -153,10 +169,10 @@ bool  isStone[13][15], isSteel[13][15];
 int xPos_P1, yPos_P1;									// (0 : 위, 1 : 아래, 2 : 오른쪽, 3 : 왼쪽, 4 : 물방울, 5 : 바늘, 6 : 죽음)
 int xPos_P2, yPos_P2;									// (0 : 위, 1 : 아래, 2 : 오른쪽, 3 : 왼쪽, 4 : 물방울, 5 : 바늘, 6 : 죽음)
 
-// 몬스터
-int xPos_Mon1, yPos_Mon1;								// (0: 아래, 1: 왼쪽, 2: 오른쪽, 3: 위쪽, 4: 죽음, 5: 사라짐)
-int xPos_Mon2, yPos_Mon2;
-bool Mon1_Live, Mon2_Live;
+int xPos_Player[4];
+int yPos_Player[4];
+
+
 
 
 
@@ -164,10 +180,17 @@ int xPos_Tile;
 int xPos_Bubble;
 int P1_Bubble_cnt[7], P2_Bubble_cnt[7];
 
+int Bubble_cnt[4][7];
+
+
 BOOL P1_Bubble[7];   //최대 폭탄을 놓을 수 있는 갯수는 7개
 BOOL P2_Bubble[7];
+BOOL Player_Bubble[4][7];
+
+
 BOOL P1_Bubble_Boom[7];
 BOOL P2_Bubble_Boom[7];
+BOOL Player_Bubble_Boom[4][7];
 
 
 BOOL P1_Bubble_Flow[7];   //폭탄이 터질때를 알려주는 BOOL값
@@ -179,6 +202,7 @@ BOOL P1_Die;			//죽었을때
 int P1_BubbleResource;	//죽었을때 리소스 반복
 int P1_BubbleCount;		//죽었을때 리소스 반복
 
+
 BOOL P2_Bubble_Flow[7];   //폭탄이 터질때를 알려주는 BOOL값
 int P2_MoveResource[7];   //물줄기 리소스 40만큼 이동하기
 int P2_Power;         //물줄기 파워(현재 WM_CREATE에 정의해놓고 사용중
@@ -188,32 +212,66 @@ BOOL P2_Die;
 int P2_BubbleResource;	//죽었을때 리소스 반복
 int P2_BubbleCount;		//죽었을때 리소스 반복
 
+BOOL Player_Bubble_Flow[4][7];
+int MoveResource[4][7];
+int Power[4];
+BOOL bInBubble[4];
+BOOL bEscape[4];
+BOOL bDie[4];
+int BubbleResource[4];
+int BubbleCount[4];
+
+
+
 BOOL P1_Move, P2_Move;
+BOOL Player_Move[4];
+
 
 BOOL Box_Break[13][15];
 int Box_cnt[13][15];
 
 int M_X, M_Y; //마우스 x,y좌표
 int P1_bCount, P2_bCount;
+int Player_bCount[4];
+
+
 
 RECT GameLogo;									//게임로고와 마우스 좌표 충돌체크를 위해서 선언.
 RECT GameStart, GameMap1, GameMap2;				//게임시작버튼, 게임맵 고르는 버튼.
 BOOL SelectMap1, SelectMap2;					//맵선택 
-RECT P1_NIDDLE, P1_PIN, P2_NIDDLE, P2_PIN;		//바늘과 핀의 좌표값
-BOOL P1_N, P1_P, P2_N, P2_P;					//바늘과 핀의 작동여부
+
+RECT P1_NIDDLE;						//바늘과 핀의 좌표값
+BOOL P1_N;										//바늘과 핀의 작동여부
+
 RECT P1_Name, P2_Name;
+RECT Player_Name[4];
+
 BOOL P1_Live = TRUE, P2_Live = TRUE;
+BOOL Player_Live[4] = { TRUE, };
+
 int P1_Speed, P2_Speed;
+int Player_Speed[4];
+
+
 int P1_tSpeed, P2_tSpeed;
+int Player_tSpeed[4];
+
+
 int P1_Dying, P2_Dying;
+int Player_Dying[4];
+
 BOOL P1_Remove, P2_Remove;
+BOOL Player_Remove[4];
+
 
 int Sel_Map;
 
 
 static bool bSceneChange = true;
-static bool bEffect[7] = { true,true,true,true,true,true,true };
+//static bool bEffect[7] = { true,true,true,true,true,true,true };
 static bool bEffect2[7] = { true,true,true,true,true,true,true };
+static bool bEffect[4][7] = { true, };
+
 static bool Helper = false;
 HBITMAP Exit;
 RECT ePos;
@@ -242,7 +300,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM  lParam)
 		// 비트맵 로드
 		SetBitmap();
 		SetTimer(hwnd, Bubble_BfBoom, 100, (TIMERPROC)TimeProc_Bubble_BfBoom);   // 물풍선 애니메이션
-		SetTimer(hwnd, Monster_Move, 50, (TIMERPROC)TimeProc_Monster_Move);
+		
+		for (int i = 0; i < MAX_PLAYER; ++i) {
+			Player_Speed[i] = 35;
+			Player_bCount[i] = 1;
+			Power[i] = 1;
+		}
+
 		P1_Speed = 35;
 		P2_Speed = 35;
 		P1_bCount = 1;
@@ -250,8 +314,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM  lParam)
 		P1_Power = 1;
 		P2_Power = 1;
 
-		Mon1_Live = TRUE;
-		Mon2_Live = TRUE;
+
 
 		SelectMap1 = TRUE;
 		Sel_Map = 0;
@@ -328,14 +391,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM  lParam)
 				else
 					P1_N = TRUE;
 			}
-			if (Collision(P2_NIDDLE, M_X, M_Y))
-			{
-				CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Button_Off.ogg");
-				if (P2_N)
-					P2_N = FALSE;
-				else
-					P2_N = TRUE;
-			}
+
 
 			if (Collision(P1_Name, M_X, M_Y)) {
 				CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Button_Off.ogg");
@@ -344,22 +400,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM  lParam)
 				else
 					P1_Live = TRUE;
 			}
-			if (Collision(P2_Name, M_X, M_Y)) {
-				CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Button_Off.ogg");
-				if (P2_Live)
-					P2_Live = FALSE;
-				else
-					P2_Live = TRUE;
-			}
+
 		}
 		if (GameState == INGAME)
 		{
 			if (Collision(ePos, M_X, M_Y)) {
 				SetPos();
-				P1_InBubble = false;
-				P1_Die = false;
-				P2_InBubble = false;
-				P2_Die = false;
+
+				for (int i = 0; i < nPlayer; ++i) {
+					bInBubble[i] = false;
+					bDie[i] = false;
+				}
+
 				bSceneChange = true;
 				CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Button_Off.ogg");
 				GameState = ROBBY;
@@ -370,19 +422,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM  lParam)
 		return 0;
 
 	case WM_CHAR:
-		/* 물줄기 세기 조절*/
-		if (wParam == '+') {
-			if (P1_bCount < 7)
-				++P1_bCount;
-			if (P2_bCount < 7)
-				++P2_bCount;
-		}
-		if (wParam == '-') {
-			if (P1_bCount > 1)
-				--P1_bCount;
-			if (P2_bCount < 7)
-				++P2_bCount;
-		}
 		break;
 
 	case WM_KEYDOWN:
@@ -395,14 +434,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM  lParam)
 			break;
 		}
 		KEY_DOWN_P1(hWnd);
-		KEY_DOWN_P2(hWnd);
+
 
 		InvalidateRect(hWnd, NULL, FALSE);
 		break;
 
 	case WM_KEYUP:
 		KEY_UP_P1(wParam, hWnd);
-		KEY_UP_P2(wParam, hWnd);
+
 		InvalidateRect(hWnd, NULL, FALSE);
 		break;
 	case WM_DESTROY:
@@ -476,6 +515,15 @@ void Animation()
 			TransparentBlt(mem1dc, 500, 487, BG_X / 2, BG_Y, mem2dc, BG_X / 2, 0, BG_X / 2, BG_Y, RGB(0, 255, 0));
 		}
 
+		for (int i = 0; i < nPlayer; ++i) {
+			if (Player_Live[i] == FALSE)
+			{
+				oldBit2 = (HBITMAP)SelectObject(mem2dc, Player_On);
+				BitBlt(mem1dc, Player_RobbyX[i], Player_RobbyY[i], 158, 188, mem2dc, 0, 0, SRCCOPY);
+			}
+
+		}
+
 		if (P1_Live == FALSE)
 		{
 			oldBit2 = (HBITMAP)SelectObject(mem2dc, P1_On);
@@ -483,7 +531,7 @@ void Animation()
 		}
 		if (P2_Live == FALSE)
 		{
-			oldBit2 = (HBITMAP)SelectObject(mem2dc, P1_On);
+			oldBit2 = (HBITMAP)SelectObject(mem2dc, P2_On);
 			BitBlt(mem1dc, 227, 114, 158, 188, mem2dc, 0, 0, SRCCOPY);
 		}
 
@@ -502,25 +550,15 @@ void Animation()
 			BitBlt(mem1dc, 477, 342, 149, 129, mem2dc, 0, 0, SRCCOPY);
 		}
 
-		if (P1_N && P1_Live) {
+		if (P1_N && Player_Live[Client_Idx]) {
 			oldBit2 = (HBITMAP)SelectObject(mem2dc, P1_NIDDLE_ON);
-			BitBlt(mem1dc, 44, 243, 33, 26, mem2dc, 0, 0, SRCCOPY);
+			BitBlt(mem1dc, Player_RobbyX[Client_Idx] + 6, Player_RobbyY[Client_Idx] + 129, 33, 26, mem2dc, 0, 0, SRCCOPY);
 		}
-		else if (!P1_N && P1_Live) {
+		else if (!P1_N && Player_Live[Client_Idx]) {
 			oldBit2 = (HBITMAP)SelectObject(mem2dc, P1_NIDDLE_OFF);
-			BitBlt(mem1dc, 44, 243, 33, 26, mem2dc, 0, 0, SRCCOPY);
+			BitBlt(mem1dc, Player_RobbyX[Client_Idx] + 6, Player_RobbyY[Client_Idx] + 129, 33, 26, mem2dc, 0, 0, SRCCOPY);
 		}
 
-
-
-		if (P2_N && P2_Live) {
-			oldBit2 = (HBITMAP)SelectObject(mem2dc, P2_NIDDLE_ON);
-			BitBlt(mem1dc, 232, 243, 33, 26, mem2dc, 0, 0, SRCCOPY);
-		}
-		else if (!P2_N && P2_Live) {
-			oldBit2 = (HBITMAP)SelectObject(mem2dc, P2_NIDDLE_OFF);
-			BitBlt(mem1dc, 232, 243, 33, 26, mem2dc, 0, 0, SRCCOPY);
-		}
 
 	}
 
@@ -702,250 +740,207 @@ void Animation()
 
 		// 캐릭터 그리기
 		/////P1 배찌 P2 다오
-		if (P1_Live) {
-			if (!P1_Remove) {
-				if (!P1_InBubble && !P1_Die && !P1_Escape)
-				{
-					P1_BubbleResource = 1;
-					P1_BubbleCount = 0;
-					P1_tSpeed = P1_Speed;
-					SelectObject(mem2dc, P1_Bit);
-					TransparentBlt(mem1dc, Player1.left - xGap_Char, Player1.bottom - Char_CY, Char_CX, Char_CY, mem2dc, xPos_P1 * Char_CX, yPos_P1 * Char_CY, Char_CX, Char_CY, TPColor);
+		for (int i = 0; i < nPlayer; ++i) {
+			if (Player_Live[i]) {
+				if (!Player_Remove[i]) {
+					if (!bInBubble[i] && !bDie[i] && !bEscape[i])
+					{
+						BubbleResource[i] = 1;
+						BubbleCount[i] = 0;
+						Player_tSpeed[i] = Player_Speed[i];
 
-				}
-				////물풍선에 갇힌 상태
-				else if (P1_InBubble)
-				{
-					SelectObject(mem2dc, P1_Bit);
-					TransparentBlt(mem1dc, Player1.left - xGap_Char, Player1.bottom - Char_CY, Char_CX, Char_CY, mem2dc, Char_CX * P1_BubbleResource, 280, Char_CX, Char_CY, TPColor);
-				}
-				//죽음
-				else if (P1_Die)
-				{
-					SelectObject(mem2dc, P1_Bit);
-					TransparentBlt(mem1dc, Player1.left - xGap_Char, Player1.bottom - Char_CY, Char_CX, Char_CY, mem2dc, Char_CX * P1_Dying, 420, Char_CX, Char_CY, TPColor);
+						SelectObject(mem2dc, Player_Bit[i]);
+						TransparentBlt(mem1dc, Player[i].left - xGap_Char, Player[i].bottom - Char_CY, Char_CX, Char_CY, mem2dc, xPos_Player[i] * Char_CX, yPos_Player[i] * Char_CY, Char_CX, Char_CY, TPColor);
 
+					}
+					////물풍선에 갇힌 상태
+					else if (bInBubble)
+					{
+						SelectObject(mem2dc, Player_Bit[i]);
+						TransparentBlt(mem1dc, Player[i].left - xGap_Char, Player[i].bottom - Char_CY, Char_CX, Char_CY, mem2dc, Char_CX * BubbleResource[i], 280, Char_CX, Char_CY, TPColor);
+					}
+					//죽음
+					else if (bDie)
+					{
+						SelectObject(mem2dc, Player_Bit[i]);
+						TransparentBlt(mem1dc, Player[i].left - xGap_Char, Player[i].bottom - Char_CY, Char_CX, Char_CY, mem2dc, Char_CX * Player_Dying[i], 420, Char_CX, Char_CY, TPColor);
+					}
 				}
 			}
 		}
-		if (P2_Live) {
-			if (!P2_Remove) {
-				if (!P2_InBubble && !P2_Die && !P2_Escape)
-				{
-					P2_BubbleResource = 1;
-					P2_BubbleCount = 0;
-					P2_tSpeed = P2_Speed;
-					SelectObject(mem2dc, P2_Bit);
-					TransparentBlt(mem1dc, Player2.left - xGap_Char, Player2.bottom - Char_CY, Char_CX, Char_CY, mem2dc, xPos_P2 * Char_CX, yPos_P2 * Char_CY, Char_CX, Char_CY, TPColor);
-
-				}
-				////물풍선에 갇힌 상태
-				else if (P2_InBubble)
-				{
-					SelectObject(mem2dc, P2_Bit);
-					TransparentBlt(mem1dc, Player2.left - xGap_Char, Player2.bottom - Char_CY, Char_CX, Char_CY, mem2dc, Char_CX * P2_BubbleResource, 280, Char_CX, Char_CY, TPColor);
-				}
-				//죽음
-				else if (P2_Die)
-				{
-					SelectObject(mem2dc, P2_Bit);
-					TransparentBlt(mem1dc, Player2.left - xGap_Char, Player2.bottom - Char_CY, Char_CX, Char_CY, mem2dc, Char_CX * P2_Dying, 420, Char_CX, Char_CY, TPColor);
-
-				}
-			}
-		}
+		//if (P1_Live) {
+		//	if (!P1_Remove) {
+		//		if (!P1_InBubble && !P1_Die && !P1_Escape)
+		//		{
+		//			P1_BubbleResource = 1;
+		//			P1_BubbleCount = 0;
+		//			P1_tSpeed = P1_Speed;
+		//			SelectObject(mem2dc, P1_Bit);
+		//			TransparentBlt(mem1dc, Player1.left - xGap_Char, Player1.bottom - Char_CY, Char_CX, Char_CY, mem2dc, xPos_P1 * Char_CX, yPos_P1 * Char_CY, Char_CX, Char_CY, TPColor);
+		//		}
+		//		////물풍선에 갇힌 상태
+		//		else if (P1_InBubble)
+		//		{
+		//			SelectObject(mem2dc, P1_Bit);
+		//			TransparentBlt(mem1dc, Player1.left - xGap_Char, Player1.bottom - Char_CY, Char_CX, Char_CY, mem2dc, Char_CX * P1_BubbleResource, 280, Char_CX, Char_CY, TPColor);
+		//		}
+		//		//죽음
+		//		else if (P1_Die)
+		//		{
+		//			SelectObject(mem2dc, P1_Bit);
+		//			TransparentBlt(mem1dc, Player1.left - xGap_Char, Player1.bottom - Char_CY, Char_CX, Char_CY, mem2dc, Char_CX * P1_Dying, 420, Char_CX, Char_CY, TPColor);
+		//		}
+		//	}
+		//}
+		//if (P2_Live) {
+		//	if (!P2_Remove) {
+		//		if (!P2_InBubble && !P2_Die && !P2_Escape)
+		//		{
+		//			P2_BubbleResource = 1;
+		//			P2_BubbleCount = 0;
+		//			P2_tSpeed = P2_Speed;
+		//			SelectObject(mem2dc, P2_Bit);
+		//			TransparentBlt(mem1dc, Player2.left - xGap_Char, Player2.bottom - Char_CY, Char_CX, Char_CY, mem2dc, xPos_P2 * Char_CX, yPos_P2 * Char_CY, Char_CX, Char_CY, TPColor);
+		//		}
+		//		////물풍선에 갇힌 상태
+		//		else if (P2_InBubble)
+		//		{
+		//			SelectObject(mem2dc, P2_Bit);
+		//			TransparentBlt(mem1dc, Player2.left - xGap_Char, Player2.bottom - Char_CY, Char_CX, Char_CY, mem2dc, Char_CX * P2_BubbleResource, 280, Char_CX, Char_CY, TPColor);
+		//		}
+		//		//죽음
+		//		else if (P2_Die)
+		//		{
+		//			SelectObject(mem2dc, P2_Bit);
+		//			TransparentBlt(mem1dc, Player2.left - xGap_Char, Player2.bottom - Char_CY, Char_CX, Char_CY, mem2dc, Char_CX * P2_Dying, 420, Char_CX, Char_CY, TPColor);
+		//		}
+		//	}
+		//}
 		//// 물풍선 - 터지기 전
 		SelectObject(mem2dc, Bubble);
 
-		for (int i = 0; i < 7; i++) {
+		/*for (int i = 0; i < 7; i++) {
 			if (P1_Bubble[i] && !P1_Bubble_Flow[i])
 				TransparentBlt(mem1dc, Tile_Bubble1[i].left, Tile_Bubble1[i].top, 40, 40, mem2dc, Bubble_CX * xPos_Bubble, 0, 40, 40, RGB(0, 255, 0));
 			if (P2_Bubble[i] && !P2_Bubble_Flow[i])
 				TransparentBlt(mem1dc, Tile_Bubble2[i].left, Tile_Bubble2[i].top, 40, 40, mem2dc, Bubble_CX * xPos_Bubble, 0, 40, 40, RGB(0, 255, 0));
+		}*/
+
+
+		for (int j = 0; j < nPlayer; ++j) {
+			for (int i = 0; i < 7; i++) {
+				if (Player_Bubble[j][i] && !Player_Bubble_Flow[j][i])
+					TransparentBlt(mem1dc, Tile_Bubble[j][i].left, Tile_Bubble[j][i].top, 40, 40, mem2dc, Bubble_CX * xPos_Bubble, 0, 40, 40, RGB(0, 255, 0));
+			}
 		}
 
 		// 물풍선 - 터질 때
 		SelectObject(mem2dc, Bubble_Bomb);
-		for (int i = 0; i < 7; ++i)
-		{
-			if (P1_Bubble_Flow[i])
+		for(int k=0;k<nPlayer;++k)
+			for (int i = 0; i < 7; ++i)
 			{
-				if (bEffect[i])
+				if (Player_Bubble_Flow[k][i])
 				{
-					CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Bubble_Off.ogg");
-					bEffect[i] = FALSE;
-				}
-
-				SelectObject(mem2dc, Bubble_Bomb);
-				int a, b;
-				for (a = 0; a < Tile_CountY; a++)
-					if (Tile_Bubble1[i].bottom == Tile[a][0].bottom)
-						break;
-				for (b = 0; b < Tile_CountX; b++)
-					if (Tile_Bubble1[i].right == Tile[0][b].right)
-						break;
-
-
-				for (int j = 0; j <= P1_Power; ++j) {   // 위
-
-					if (Collision(Player1, (Tile_Bubble1[i].left + Tile_Bubble1[i].right) / 2, Tile_Bubble1[i].top - 40 * j) ||
-						Collision(Player1, (Tile_Bubble1[i].left + Tile_Bubble1[i].right) / 2, Tile_Bubble1[i].top - 40 * j + 20)) {
-						P1_Speed = 100;
-						SetTimer(hwnd, In_Bubble, P1_Speed, (TIMERPROC)TimeProc_InBubble);
-						P1_InBubble = TRUE;
-					}
-					if (Collision(Monster1, (Tile_Bubble1[i].left + Tile_Bubble1[i].right) / 2, Tile_Bubble1[i].top - 40 * j) ||
-						Collision(Monster1, (Tile_Bubble1[i].left + Tile_Bubble1[i].right) / 2, Tile_Bubble1[i].top - 40 * j + 20)) {
-						if (mEffect[0]) {
-							CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Monster_Basic_Normal_Die.ogg");
-							mEffect[0] = false;
-							Mon1_Live = FALSE;
-							yPos_Mon1 = M_DIE;
-						}
+					if (bEffect[k][i])
+					{
+						CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Bubble_Off.ogg");
+						bEffect[k][i] = FALSE;
 					}
 
-					if (Collision(Monster2, (Tile_Bubble1[i].left + Tile_Bubble1[i].right) / 2, Tile_Bubble1[i].top - 40 * j) ||
-						Collision(Monster2, (Tile_Bubble1[i].left + Tile_Bubble1[i].right) / 2, Tile_Bubble1[i].top - 40 * j + 20)) {
-						if (mEffect[1]) {
-							CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Monster_Basic_Normal_Die.ogg");
-							mEffect[1] = false;
-							Mon2_Live = FALSE;
-							yPos_Mon2 = M_DIE;
-						}
-					}
+					SelectObject(mem2dc, Bubble_Bomb);
+					int a, b;
+					for (a = 0; a < Tile_CountY; a++)
+						if (Tile_Bubble[k][i].bottom == Tile[a][0].bottom)
+							break;
+					for (b = 0; b < Tile_CountX; b++)
+						if (Tile_Bubble[k][i].right == Tile[0][b].right)
+							break;
 
-					if (j == P1_Power || !Tile_Enable_Move[Sel_Map][a - j - 1][b] || Tile_Bubble1[i].top - 40 * j == Tile[0][0].top || isBox[Sel_Map][a - j][b]) {
-						TransparentBlt(mem1dc, Tile_Bubble1[i].left, Tile_Bubble1[i].top - 40 * j, 40, 40, mem2dc, 40 * P1_MoveResource[i], 40, 40, 40, RGB(0, 255, 0));
-						if (isBox[Sel_Map][a - j][b])
-							Box_Break[a - j][b] = TRUE;
-						break;
-					}
-					TransparentBlt(mem1dc, Tile_Bubble1[i].left, Tile_Bubble1[i].top - (40 * j), 40, 40, mem2dc, 40 * P1_MoveResource[i], 200, 40, 40, RGB(0, 255, 0));
-				}
-				for (int j = 0; j <= P1_Power; ++j) {   // 아래
-					if (Collision(Player1, (Tile_Bubble1[i].left + Tile_Bubble1[i].right) / 2, Tile_Bubble1[i].bottom + 40 * j) ||
-						Collision(Player1, (Tile_Bubble1[i].left + Tile_Bubble1[i].right) / 2, Tile_Bubble1[i].bottom + 40 * j - 20)) {
-						P1_Speed = 100;
-						SetTimer(hwnd, In_Bubble, P1_Speed, (TIMERPROC)TimeProc_InBubble);
-						P1_InBubble = TRUE;
-					}
-					if (Collision(Monster1, (Tile_Bubble1[i].left + Tile_Bubble1[i].right) / 2, Tile_Bubble1[i].bottom + 40 * j) ||
-						Collision(Monster1, (Tile_Bubble1[i].left + Tile_Bubble1[i].right) / 2, Tile_Bubble1[i].bottom + 40 * j - 20)) {
-						if (mEffect[0]) {
-							CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Monster_Basic_Normal_Die.ogg");
-							mEffect[0] = false;
-							Mon1_Live = FALSE;
-							yPos_Mon1 = M_DIE;
+
+					for (int j = 0; j <= Power[k]; ++j) {   // 위
+
+						if (Collision(Player[k], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].top - 40 * j) ||
+							Collision(Player[k], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].top - 40 * j + 20)) {
+							Player_Speed[k] = 100;
+							SetTimer(hwnd, In_Bubble, Player_Speed[k], (TIMERPROC)TimeProc_InBubble);
+							bInBubble[k] = TRUE;
 						}
 
-					}
-
-					if (Collision(Monster2, (Tile_Bubble1[i].left + Tile_Bubble1[i].right) / 2, Tile_Bubble1[i].bottom + 40 * j) ||
-						Collision(Monster2, (Tile_Bubble1[i].left + Tile_Bubble1[i].right) / 2, Tile_Bubble1[i].bottom + 40 * j - 20)) {
-						if (mEffect[1]) {
-							CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Monster_Basic_Normal_Die.ogg");
-							mEffect[1] = false;
-							Mon2_Live = FALSE;
-							yPos_Mon2 = M_DIE;
+						if (j == Power[k] || !Tile_Enable_Move[Sel_Map][a - j - 1][b] || Tile_Bubble[k][i].top - 40 * j == Tile[0][0].top || isBox[Sel_Map][a - j][b]) {
+							TransparentBlt(mem1dc, Tile_Bubble[k][i].left, Tile_Bubble[k][i].top - 40 * j, 40, 40, mem2dc, 40 * MoveResource[k][i], 40, 40, 40, RGB(0, 255, 0));
+							if (isBox[Sel_Map][a - j][b])
+								Box_Break[a - j][b] = TRUE;
+							break;
 						}
+						TransparentBlt(mem1dc, Tile_Bubble[k][i].left, Tile_Bubble[k][i].top - (40 * j), 40, 40, mem2dc, 40 * MoveResource[k][i], 200, 40, 40, RGB(0, 255, 0));
 					}
-
-					if (j == P1_Power || !Tile_Enable_Move[Sel_Map][a + j + 1][b] || Tile_Bubble1[i].bottom + 40 * j == Tile[12][14].bottom || isBox[Sel_Map][a + j][b]) {
-						TransparentBlt(mem1dc, Tile_Bubble1[i].left, Tile_Bubble1[i].top + 40 * j, 40, 40, mem2dc, 40 * P1_MoveResource[i], 80, 40, 40, RGB(0, 255, 0));
-						if (isBox[Sel_Map][a + j][b])
-							Box_Break[a + j][b] = TRUE;
-						break;
-					}
-					TransparentBlt(mem1dc, Tile_Bubble1[i].left, Tile_Bubble1[i].top + (40 * j), 40, 40, mem2dc, 40 * P1_MoveResource[i], 240, 40, 40, RGB(0, 255, 0));
-				}
-				for (int j = 0; j <= P1_Power; ++j) {   // 오른쪽
-					if (Collision(Player1, Tile_Bubble1[i].right + 40 * j, (Tile_Bubble1[i].top + Tile_Bubble1[i].bottom) / 2) ||
-						Collision(Player1, Tile_Bubble1[i].right + 40 * j - 20, (Tile_Bubble1[i].top + Tile_Bubble1[i].bottom) / 2)) {
-						P1_Speed = 100;
-						SetTimer(hwnd, In_Bubble, P1_Speed, (TIMERPROC)TimeProc_InBubble);
-						P1_InBubble = TRUE;
-					}
-					if (Collision(Monster1, Tile_Bubble1[i].right + 40 * j, (Tile_Bubble1[i].top + Tile_Bubble1[i].bottom) / 2) ||
-						Collision(Monster1, Tile_Bubble1[i].right + 40 * j - 20, (Tile_Bubble1[i].top + Tile_Bubble1[i].bottom) / 2)) {
-						if (mEffect[0]) {
-							CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Monster_Basic_Normal_Die.ogg");
-							mEffect[0] = false;
-							Mon1_Live = FALSE;
-							yPos_Mon1 = M_DIE;
+					for (int j = 0; j <= Power[k]; ++j) {   // 아래
+						if (Collision(Player[k], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].bottom + 40 * j) ||
+							Collision(Player[k], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].bottom + 40 * j - 20)) {
+							Player_Speed[k] = 100;
+							SetTimer(hwnd, In_Bubble, Player_Speed[k], (TIMERPROC)TimeProc_InBubble);
+							bInBubble[k] = TRUE;
 						}
-					}
 
-					if (Collision(Monster2, Tile_Bubble1[i].right + 40 * j, (Tile_Bubble1[i].top + Tile_Bubble1[i].bottom) / 2) ||
-						Collision(Monster2, Tile_Bubble1[i].right + 40 * j - 20, (Tile_Bubble1[i].top + Tile_Bubble1[i].bottom) / 2)) {
-						if (mEffect[1]) {
-							CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Monster_Basic_Normal_Die.ogg");
-							mEffect[1] = false;
-							Mon2_Live = FALSE;
-							yPos_Mon2 = M_DIE;
+
+						if (j == Power[k] || !Tile_Enable_Move[Sel_Map][a + j + 1][b] || Tile_Bubble[k][i].bottom + 40 * j == Tile[12][14].bottom || isBox[Sel_Map][a + j][b]) {
+							TransparentBlt(mem1dc, Tile_Bubble[k][i].left, Tile_Bubble[k][i].top + 40 * j, 40, 40, mem2dc, 40 * MoveResource[k][i], 80, 40, 40, RGB(0, 255, 0));
+							if (isBox[Sel_Map][a + j][b])
+								Box_Break[a + j][b] = TRUE;
+							break;
 						}
+						TransparentBlt(mem1dc, Tile_Bubble[k][i].left, Tile_Bubble[k][i].top + (40 * j), 40, 40, mem2dc, 40 * MoveResource[k][i], 240, 40, 40, RGB(0, 255, 0));
 					}
-
-					if (j == P1_Power || !Tile_Enable_Move[Sel_Map][a][b + j + 1] || Tile_Bubble1[i].right + 40 * j == Tile[12][14].right || isBox[Sel_Map][a][b + j]) {
-						TransparentBlt(mem1dc, Tile_Bubble1[i].left + 40 * j, Tile_Bubble1[i].top, 40, 40, mem2dc, 40 * P1_MoveResource[i], 120, 40, 40, RGB(0, 255, 0));
-						if (isBox[Sel_Map][a][b + j])
-							Box_Break[a][b + j] = TRUE;
-						break;
-					}
-					TransparentBlt(mem1dc, Tile_Bubble1[i].left + (40 * j), Tile_Bubble1[i].top, 40, 40, mem2dc, 40 * P1_MoveResource[i], 280, 40, 40, RGB(0, 255, 0));
-				}
-				for (int j = 0; j <= P1_Power; ++j) {   // 왼쪽
-					if (Collision(Player1, Tile_Bubble1[i].left - 40 * j, (Tile_Bubble1[i].top + Tile_Bubble1[i].bottom) / 2) ||
-						Collision(Player1, Tile_Bubble1[i].left - 40 * j + 20, (Tile_Bubble1[i].top + Tile_Bubble1[i].bottom) / 2)) {
-						P1_Speed = 100;
-						SetTimer(hwnd, In_Bubble, P1_Speed, (TIMERPROC)TimeProc_InBubble);
-						P1_InBubble = TRUE;
-					}
-					if (Collision(Monster1, Tile_Bubble1[i].left - 40 * j, (Tile_Bubble1[i].top + Tile_Bubble1[i].bottom) / 2) ||
-						Collision(Monster1, Tile_Bubble1[i].left - 40 * j + 20, (Tile_Bubble1[i].top + Tile_Bubble1[i].bottom) / 2)) {
-						if (mEffect[0]) {
-							CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Monster_Basic_Normal_Die.ogg");
-							mEffect[0] = false;
-							Mon1_Live = FALSE;
-							yPos_Mon1 = M_DIE;
+					for (int j = 0; j <= Power[k]; ++j) {   // 오른쪽
+						if (Collision(Player[k], Tile_Bubble[k][i].right + 40 * j, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2) ||
+							Collision(Player[k], Tile_Bubble[k][i].right + 40 * j - 20, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2)) {
+							Player_Speed[k] = 100;
+							SetTimer(hwnd, In_Bubble, Player_Speed[k], (TIMERPROC)TimeProc_InBubble);
+							bInBubble[k] = TRUE;
 						}
-					}
 
-					if (Collision(Monster2, Tile_Bubble1[i].left - 40 * j, (Tile_Bubble1[i].top + Tile_Bubble1[i].bottom) / 2) ||
-						Collision(Monster2, Tile_Bubble1[i].left - 40 * j + 20, (Tile_Bubble1[i].top + Tile_Bubble1[i].bottom) / 2)) {
-						if (mEffect[1]) {
-							CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Monster_Basic_Normal_Die.ogg");
-							mEffect[1] = false;
-							Mon2_Live = FALSE;
-							yPos_Mon2 = M_DIE;
+						if (j == Power[k] || !Tile_Enable_Move[Sel_Map][a][b + j + 1] || Tile_Bubble[k][i].right + 40 * j == Tile[12][14].right || isBox[Sel_Map][a][b + j]) {
+							TransparentBlt(mem1dc, Tile_Bubble[k][i].left + 40 * j, Tile_Bubble[k][i].top, 40, 40, mem2dc, 40 * MoveResource[k][i], 120, 40, 40, RGB(0, 255, 0));
+							if (isBox[Sel_Map][a][b + j])
+								Box_Break[a][b + j] = TRUE;
+							break;
 						}
+						TransparentBlt(mem1dc, Tile_Bubble[k][i].left + (40 * j), Tile_Bubble[k][i].top, 40, 40, mem2dc, 40 * MoveResource[k][i], 280, 40, 40, RGB(0, 255, 0));
+					}
+					for (int j = 0; j <= Power[k]; ++j) {   // 왼쪽
+						if (Collision(Player[k], Tile_Bubble[k][i].left - 40 * j, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2) ||
+							Collision(Player[k], Tile_Bubble[k][i].left - 40 * j + 20, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2)) {
+							Player_Speed[k] = 100;
+							SetTimer(hwnd, In_Bubble, Player_Speed[k], (TIMERPROC)TimeProc_InBubble);
+							bInBubble[k] = TRUE;
+						}
+
+						if (j == Power[k] || !Tile_Enable_Move[Sel_Map][a][b - j - 1] || Tile_Bubble[k][i].left - 40 * j == Tile[0][0].left || isBox[Sel_Map][a][b - j]) {
+							TransparentBlt(mem1dc, Tile_Bubble[k][i].left - 40 * j, Tile_Bubble[k][i].top, 40, 40, mem2dc, 40 * MoveResource[k][i], 160, 40, 40, RGB(0, 255, 0));
+							if (isBox[Sel_Map][a][b - j])
+								Box_Break[a][b - j] = TRUE;
+							break;
+						}
+						TransparentBlt(mem1dc, Tile_Bubble[k][i].left - (40 * j), Tile_Bubble[k][i].top, 40, 40, mem2dc, 40 * MoveResource[k][i], 320, 40, 40, RGB(0, 255, 0));
+					}
+					TransparentBlt(mem1dc, Tile_Bubble[k][i].left, Tile_Bubble[k][i].top, 40, 40, mem2dc, 40 * MoveResource[k][i], 0, 40, 40, RGB(0, 255, 0));   // 중앙
+
+					if (InBubble_Collision(Player[k], Tile_Bubble[k][i].top, Tile_Bubble[k][i].left, Tile_Bubble[k][i].bottom, Tile_Bubble[k][i].right))
+					{
+						SetTimer(hwnd, In_Bubble, Player_Speed[k], (TIMERPROC)TimeProc_InBubble);
+						Player_Speed[k] = 100;
+						SelectObject(mem2dc, Player_Bit[k]);
+						TransparentBlt(mem1dc, Player[k].left - xGap_Char, Player[k].bottom - Char_CY, Char_CX, Char_CY, mem2dc, 0, 280, Char_CX, Char_CY, TPColor);
 					}
 
-					if (j == P1_Power || !Tile_Enable_Move[Sel_Map][a][b - j - 1] || Tile_Bubble1[i].left - 40 * j == Tile[0][0].left || isBox[Sel_Map][a][b - j]) {
-						TransparentBlt(mem1dc, Tile_Bubble1[i].left - 40 * j, Tile_Bubble1[i].top, 40, 40, mem2dc, 40 * P1_MoveResource[i], 160, 40, 40, RGB(0, 255, 0));
-						if (isBox[Sel_Map][a][b - j])
-							Box_Break[a][b - j] = TRUE;
-						break;
-					}
-					TransparentBlt(mem1dc, Tile_Bubble1[i].left - (40 * j), Tile_Bubble1[i].top, 40, 40, mem2dc, 40 * P1_MoveResource[i], 320, 40, 40, RGB(0, 255, 0));
-				}
-				TransparentBlt(mem1dc, Tile_Bubble1[i].left, Tile_Bubble1[i].top, 40, 40, mem2dc, 40 * P1_MoveResource[i], 0, 40, 40, RGB(0, 255, 0));   // 중앙
 
-				if (InBubble_Collision(Player1, Tile_Bubble1[i].top, Tile_Bubble1[i].left, Tile_Bubble1[i].bottom, Tile_Bubble1[i].right))
-				{
-					SetTimer(hwnd, In_Bubble, P1_Speed, (TIMERPROC)TimeProc_InBubble);
-					P1_Speed = 100;
-					SelectObject(mem2dc, P1_Bit);
-					TransparentBlt(mem1dc, Player1.left - xGap_Char, Player1.bottom - Char_CY, Char_CX, Char_CY, mem2dc, 0, 280, Char_CX, Char_CY, TPColor);
+
+					////////////////////////////물줄기에 닿으면 죽음 ㅠ
 				}
 
 
 
-				////////////////////////////물줄기에 닿으면 죽음 ㅠ
 			}
-
-
-
-		}
 
 
 
@@ -953,7 +948,46 @@ void Animation()
 		for (int i = 0; i < Tile_CountY; i++)
 			for (int j = 0; j < Tile_CountX; j++) {
 				if (Itemset[Sel_Map][i][j] != 0 && Itemset[Sel_Map][i][j] != 7) {
-					if (IntersectRect(&Temp, &Player1, &Tile[i][j])) {
+					for (int k = 0; k < nPlayer; ++k) {
+						if (IntersectRect(&Temp, &Player[k], &Tile[i][j])) {
+							if (Itemset[Sel_Map][i][j] == Ball) {
+								CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
+								if (Player_bCount[k] < 7)
+									Player_bCount[k]++;
+							}
+							if (Itemset[Sel_Map][i][j] == OnePower) {
+								CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
+								if (Power[k] < 7)
+									Power[k]++;
+							}
+							if (Itemset[Sel_Map][i][j] == Speed) {
+								CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
+								KillTimer(hwnd, k);
+								if (Player_Speed[k] >= 20)
+									Player_Speed[k] -= 5;
+								if(k==Client_Idx)
+									SetTimer(hwnd, k, Player_Speed[k], (TIMERPROC)TimeProc_P1_Move);
+							}
+
+							if (Itemset[Sel_Map][i][j] == MaxPower) {
+								CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
+								Power[k] = 7;
+							}
+							if (Itemset[Sel_Map][i][j] == RedDevil) {
+								CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
+								KillTimer(hwnd, k);
+								Player_Speed[k] = 15;
+								if (k == Client_Idx)
+									SetTimer(hwnd, k, Player_Speed[k], (TIMERPROC)TimeProc_P1_Move);
+								Player_bCount[k] = 7;
+								Power[k] = 7;
+							}
+							Itemset[Sel_Map][i][j] = 0;
+						}
+
+					}
+
+					/*if (IntersectRect(&Temp, &Player1, &Tile[i][j])) {
 						if (Itemset[Sel_Map][i][j] == Ball) {
 							CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
 							if (P1_bCount < 7)
@@ -985,51 +1019,14 @@ void Animation()
 							P1_Power = 7;
 						}
 						Itemset[Sel_Map][i][j] = 0;
-					}
-
-					if (IntersectRect(&Temp, &Player2, &Tile[i][j])) {
-						CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
-						if (Itemset[Sel_Map][i][j] == Ball) {
-							if (P2_bCount < 7)
-								P2_bCount++;
-						}
-						if (Itemset[Sel_Map][i][j] == OnePower) {
-							CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
-							if (P2_Power < 7)
-								P2_Power++;
-						}if (Itemset[Sel_Map][i][j] == Speed) {
-							CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
-							KillTimer(hwnd, P2);
-							if (P2_Speed >= 20)
-								P2_Speed -= 5;
-							SetTimer(hwnd, P2, P2_Speed, (TIMERPROC)TimeProc_P2_Move);
-						}
-
-						if (Itemset[Sel_Map][i][j] == MaxPower) {
-							CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
-							P2_Power = 7;
-						}
-
-						if (Itemset[Sel_Map][i][j] == RedDevil) {
-							CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
-							KillTimer(hwnd, P2);
-							P2_Speed = 15;
-							SetTimer(hwnd, P2, P2_Speed, (TIMERPROC)TimeProc_P2_Move);
-							P2_bCount = 7;
-							P2_Power = 7;
-						}
-						Itemset[Sel_Map][i][j] = 0;
-					}
+					}*/
 				}
 			}
 		if (P1_N) {
 			SelectObject(mem2dc, P1_nOn);
 			BitBlt(mem1dc, 60, 563, 44, 37, mem2dc, 0, 0, SRCCOPY);
 		}
-		if (P2_N) {
-			SelectObject(mem2dc, P2_nOn);
-			BitBlt(mem1dc, 360, 563, 44, 37, mem2dc, 0, 0, SRCCOPY);
-		}
+
 
 		if (Collision(ePos, M_X, M_Y))
 		{
@@ -1169,17 +1166,12 @@ void CALLBACK TimeProc_Bubble_BfBoom(HWND hWnd, UINT uMsg, UINT idEvent, DWORD d
 
 	++xPos_Bubble %= 4;
 
-	++xPos_Mon1 %= 2;
-	++xPos_Mon2 %= 2;
 
 	if (P1_Die && P2_Die && !Ending) {
 		Ending = TRUE;
 		CSoundMgr::GetInstance()->PlayEffectSound2(L"SFX_Word_Lose.ogg");
 	}
-	if (!Mon1_Live && !Mon2_Live && !Ending) {
-		Ending = TRUE;
-		CSoundMgr::GetInstance()->PlayEffectSound2(L"SFX_Word_Win.ogg");
-	}
+
 	for (int i = 0; i < 7; i++) {
 		if (P1_Bubble[i] && !P1_Bubble_Boom[i]) {
 			if (++P1_Bubble_cnt[i] == 30) {
@@ -1248,13 +1240,14 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
 	SetEvent(hSendEvent);
 	WaitForSingleObject(hPlayerEvent, 10);
-	Player1.left = Recv_Player_Packet->x;
-	Player1.right = Player1.left + Player_CX;
-	Player1.top = Recv_Player_Packet->y;
-	Player1.bottom = Recv_Player_Packet->y + Player_CY;
+
+	Player[Client_Idx].left = Recv_Player_Packet->x;
+	Player[Client_Idx].right = Player[Client_Idx].left + Player_CX;
+	Player[Client_Idx].top = Recv_Player_Packet->y;
+	Player[Client_Idx].bottom = Recv_Player_Packet->y + Player_CY;
 	ResetEvent(hPlayerEvent);
 
-	RECT tmpRECT = Player1;
+	RECT tmpRECT = Player[Client_Idx];
 	switch (yPos_P1) {
 	case LEFT:
 		if (tmpRECT.left >= StartX + 10) {
@@ -1390,154 +1383,49 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 		break;
 	}
 	// 플레이어 이동 패킷 생성 - 상태 아직 안보냄
-	WaitForSingleObject(hSendEvent,INFINITE);
-	Send_Client_Packet = new InputPacket(Client_Idx, tmpRECT.left, tmpRECT.top, 0);
-	SetEvent(hInputEvent);
-	InvalidateRect(hWnd, NULL, FALSE);
-}
-
-void CALLBACK TimeProc_P2_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
-{
-	switch (yPos_P2) {
-	case LEFT:
-		if (Player2.left >= StartX + 10) {
-			Player2.left -= 5;
-			Player2.right -= 5;
-			for (int i = 0; i < Tile_CountY; i++)
-				for (int j = 0; j < Tile_CountX; j++)
-					if ((Collision(Tile[i][j], Player2.left, Player2.top) || Collision(Tile[i][j], Player2.left, Player2.bottom)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
-						Player2.left = Tile[i][j].right;
-						Player2.right = Player2.left + Player_CX;
-						// 블럭 충돌체크 부드럽게
-						if (Tile[i][j].bottom < (Player2.top + Player2.bottom) / 2 && Tile_Enable_Move[Sel_Map][i + 1][j] && !isBox[Sel_Map][i + 1][j]) {
-							Player2.top = Tile[i + 1][j].top;
-							Player2.bottom = Player2.top + Player_CY;
-						}
-						if ((Player2.top + Player2.bottom) / 2 < Tile[i][j].top && Tile_Enable_Move[Sel_Map][i - 1][j] && !isBox[Sel_Map][i - 1][j]) {
-							Player2.bottom = Tile[i - 1][j].bottom;
-							Player2.top = Player2.bottom - Player_CY;
-						}
-					}
-		}
-		else if (Player2.left <= StartX + 10) {
-			Player2.left = StartX;
-			Player2.right = Player2.left + Player_CX;
-		}
-		// 물풍선 체크
-		for (int i = 0; i < P2_bCount; i++) {
-			if (P2_Bubble[i] && Collision(Tile_Bubble2[i], Player2.left, (Player2.top + Player2.bottom) / 2) &&
-				Tile_Bubble2[i].right - 6 <= Player2.left && Player2.left <= Tile_Bubble2[i].right + 6) {
-				Player2.left = Tile_Bubble2[i].right;
-				Player2.right = Player2.left + Player_CX;
-			}
-		}
-		break;
-	case RIGHT:
-		if (Player2.right <= Tile[12][14].right - 10) {
-			Player2.left += 5;
-			Player2.right += 5;
-			for (int i = 0; i < Tile_CountY; i++)
-				for (int j = 0; j < Tile_CountX; j++)
-					if ((Collision(Tile[i][j], Player2.right, Player2.top) || Collision(Tile[i][j], Player2.right, Player2.bottom)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
-						Player2.right = Tile[i][j].left;
-						Player2.left = Player2.right - Player_CX;
-						// 블럭 충돌체크 부드럽게
-						if (Tile[i][j].bottom < (Player2.top + Player2.bottom) / 2 && Tile_Enable_Move[Sel_Map][i + 1][j] && !isBox[Sel_Map][i + 1][j]) {
-							Player2.top = Tile[i + 1][j].top;
-							Player2.bottom = Player2.top + Player_CY;
-						}
-						if ((Player2.top + Player2.bottom) / 2 < Tile[i][j].top && Tile_Enable_Move[Sel_Map][i - 1][j] && !isBox[Sel_Map][i - 1][j]) {
-							Player2.bottom = Tile[i - 1][j].bottom;
-							Player2.top = Player2.bottom - Player_CY;
-						}
-					}
-		}
-		else if (Player2.right >= Tile[12][14].right - 10) {
-			Player2.right = Tile[12][14].right;
-			Player2.left = Player2.right - Player_CX;
-		}
-		// 물풍선 체크
-		for (int i = 0; i < P2_bCount; i++) {
-			if (P2_Bubble[i] && Collision(Tile_Bubble2[i], Player2.right, (Player2.top + Player2.bottom) / 2) &&
-				Tile_Bubble2[i].left - 6 <= Player2.right && Player2.right <= Tile_Bubble2[i].left + 6) {
-				Player2.right = Tile_Bubble2[i].left;
-				Player2.left = Player2.right - Player_CX;
-			}
-		}
-		break;
-	case UP:
-		if (Player2.top >= StartY + 10) {
-			Player2.top -= 5;
-			Player2.bottom -= 5;
-			for (int i = 0; i < Tile_CountY; i++)
-				for (int j = 0; j < Tile_CountX; j++)
-					if ((Collision(Tile[i][j], Player2.left, Player2.top) || Collision(Tile[i][j], Player2.right, Player2.top)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
-						Player2.top = Tile[i][j].bottom;
-						Player2.bottom = Player2.top + Player_CY;
-						// 블럭 충돌체크 부드럽게
-						if (Tile[i][j].right < (Player2.left + Player2.right) / 2 && Tile_Enable_Move[Sel_Map][i][j + 1] && !isBox[Sel_Map][i][j + 1]) {
-							Player2.left = Tile[i][j + 1].left;
-							Player2.right = Player2.left + Player_CX;
-						}
-						if ((Player2.left + Player2.right) / 2 < Tile[i][j].left && Tile_Enable_Move[Sel_Map][i][j - 1] && !isBox[Sel_Map][i][j - 1]) {
-							Player2.right = Tile[i][j - 1].right;
-							Player2.left = Player2.right - Player_CX;
-						}
-					}
-		}
-		else if (Player2.top <= StartY + 5) {
-			Player2.top = StartY;
-			Player2.bottom = Player2.top + Player_CY;
-		}
-		// 물풍선 체크
-		for (int i = 0; i < P2_bCount; i++) {
-			if (P2_Bubble[i] && Collision(Tile_Bubble2[i], (Player2.left + Player2.right) / 2, Player2.top) &&
-				Tile_Bubble2[i].bottom - 6 <= Player2.top && Player2.top <= Tile_Bubble2[i].bottom + 6) {
-				Player2.top = Tile_Bubble2[i].bottom;
-				Player2.bottom = Player2.top + Player_CY;
-			}
-		}
-		break;
-	case DOWN:
-		if (Player2.bottom <= Tile[12][14].bottom - 10) {
-			Player2.top += 5;
-			Player2.bottom += 5;
-			for (int i = 0; i < Tile_CountY; i++)
-				for (int j = 0; j < Tile_CountX; j++)
-					if ((Collision(Tile[i][j], Player2.left, Player2.bottom) || Collision(Tile[i][j], Player2.right, Player2.bottom)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
-						Player2.bottom = Tile[i][j].top;
-						Player2.top = Player2.bottom - Player_CY;
-						// 블럭 충돌체크 부드럽게
-						if (Tile[i][j].right < (Player2.left + Player2.right) / 2 && Tile_Enable_Move[Sel_Map][i][j + 1] && !isBox[Sel_Map][i][j + 1]) {
-							Player2.left = Tile[i][j + 1].left;
-							Player2.right = Player2.left + Player_CX;
-						}
-						if ((Player2.left + Player2.right) / 2 < Tile[i][j].left && Tile_Enable_Move[Sel_Map][i][j - 1] && !isBox[Sel_Map][i][j - 1]) {
-							Player2.right = Tile[i][j - 1].right;
-							Player2.left = Player2.right - Player_CX;
-						}
-					}
-		}
-		else if (Player2.bottom >= Tile[12][14].bottom - 10) {
-			Player2.bottom = Tile[12][14].bottom;
-			Player2.top = Player2.bottom - Player_CY;
-		}
-		// 물풍선 체크
-		for (int i = 0; i < P2_bCount; i++) {
-			if (P2_Bubble[i] && Collision(Tile_Bubble2[i], (Player2.left + Player2.right) / 2, Player2.bottom) &&
-				Tile_Bubble2[i].top - 6 <= Player2.bottom && Player2.bottom <= Tile_Bubble2[i].top + 6) {
-				Player2.bottom = Tile_Bubble2[i].top;
-				Player2.top = Player2.bottom - Player_CY;
-			}
-		}
-		break;
+	
+	if (tmpRECT.left != Player[Client_Idx].left || tmpRECT.top != Player[Client_Idx].top) {
+		WaitForSingleObject(hSendEvent, INFINITE);
+		Send_Client_Packet = new InputPacket(Client_Idx, tmpRECT.left, tmpRECT.top, 0);
+		SetEvent(hInputEvent);
 	}
 	InvalidateRect(hWnd, NULL, FALSE);
 }
 
+
+
+
 void CALLBACK TimeProc_InBubble(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
-	if (P1_InBubble)
+	for (int i = 0; i < nPlayer; ++i) {
+		if (bInBubble[i])
+		{
+			if (BubbleCount[i] >= 30 && BubbleCount[i] < 33)
+			{
+				BubbleResource[i] = 2;
+				BubbleCount[i]++;
+			}
+			else if (BubbleCount[i] == 33)
+			{
+				BubbleResource[i] = 3;
+				BubbleCount[i] = 0;
+
+				if (!bInBubble[0] && !bInBubble[1] && !bInBubble[2] && !bInBubble[3])
+					KillTimer(hwnd, In_Bubble);
+				bInBubble[i] = FALSE;
+				bDie[i] = TRUE;
+				CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Character_Die.ogg");
+				SetTimer(hwnd, Die, 150, (TIMERPROC)TimeProc_Die);
+			}
+			else
+			{
+				BubbleResource[i] = (++BubbleResource[i] % 2);
+				BubbleCount[i]++;
+			}
+		}
+	}
+
+	/*if (P1_InBubble)
 	{
 		if (P1_BubbleCount >= 30 && P1_BubbleCount < 33)
 		{
@@ -1585,18 +1473,33 @@ void CALLBACK TimeProc_InBubble(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime
 			++P2_BubbleResource %= 2;
 			P2_BubbleCount++;
 		}
-	}
+	}*/
 	InvalidateRect(hWnd, NULL, FALSE);
 }
 
 void CALLBACK TimeProc_Die(HWND hWnd, UINT uMsg, UINT ideEvent, DWORD dwTime)
 {
-	static int cnt1 = 0, cnt2 = 0;
+	static int cnt[4] = { 0, };
 
-	if (P1_Remove && P2_Remove)
+	if (bDie[0] && bDie[1] && bDie[2] && bDie[3])
 		KillTimer(hWnd, Die);
 
-	if (P1_Die)
+	for (int i = 0; i < nPlayer; ++i) {
+		if (bDie[i])
+		{
+			//if (Player_Dying[i] == 0)
+			//	CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Character_Die.ogg");
+			Player_Dying[i]++;
+			if (Player_Dying[i] == 6) {
+				Player_Dying[i] = 5 + cnt[i] % 2;
+				cnt[i]++;
+				if (cnt[i] == 3)
+					Player_Remove[i] = TRUE;
+			}
+		}
+	}
+
+	/*if (P1_Die)
 	{
 		if (P1_Dying == 0)
 			CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Character_Die.ogg");
@@ -1619,360 +1522,11 @@ void CALLBACK TimeProc_Die(HWND hWnd, UINT uMsg, UINT ideEvent, DWORD dwTime)
 			if (cnt2 == 3)
 				P2_Remove = TRUE;
 		}
-	}
+	}*/
 	InvalidateRect(hWnd, NULL, false);
 }
 
-void CALLBACK TimeProc_Monster_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
-{
-	srand((unsigned)time(NULL));
 
-	RECT rc;
-	int random;
-	random = rand() % 5;
-
-	if (!Mon1_Live) {
-		if (++xPos_Mon1 % 2) {
-			yPos_Mon1++;
-			xPos_Mon1 = 1;
-		}
-	}
-	if (!Mon2_Live) {
-		if (++xPos_Mon2 % 2) {
-			yPos_Mon2++;
-			xPos_Mon2 = 1;
-		}
-	}
-
-	if (!Mon1_Live && !Mon2_Live) {
-		KillTimer(hwnd, Monster_Move);
-	}
-	switch (yPos_Mon1) {
-	case M_LEFT:
-		if (Monster1.left >= StartX + 5) {
-			Monster1.left -= 4;
-			Monster1.right -= 4;
-			for (int i = 0; i < Tile_CountY; i++)
-				for (int j = 0; j < Tile_CountX; j++) {
-					if ((Collision(Tile[i][j], Monster1.left, Monster1.top + 1) || Collision(Tile[i][j], Monster1.left, Monster1.bottom - 1)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
-						Monster1.left = Tile[i][j].right;
-						Monster1.right = Monster1.left + Monster1_CX;
-						yPos_Mon1 = M_RIGHT;
-					}
-					if (Tile[i][j].left <= Monster1.left && Monster1.left <= Tile[i][j].left + 2 &&
-						((Tile[i][j].top <= Monster1.top && Monster1.top <= Tile[i][j].top + 2) || (Tile[i][j].bottom - 2 <= Monster1.bottom && Monster1.bottom <= Tile[i][j].bottom))) {
-						// 상
-						if (Tile_Enable_Move[Sel_Map][i - 1][j] && !isBox[Sel_Map][i - 1][j] && random == 0)
-							yPos_Mon1 = M_UP;
-						// 하
-						else if (Tile_Enable_Move[Sel_Map][i + 1][j] && !isBox[Sel_Map][i + 1][j] && random == 1)
-							yPos_Mon1 = M_DOWN;
-					}
-				}
-		}
-		else {
-			Monster1.left = StartX;
-			Monster1.right = Monster1.left + Monster1_CX;
-			if (yPos_Mon1 == M_LEFT)
-				yPos_Mon1 = M_RIGHT;
-		}
-		// 물풍선 체크
-		for (int i = 0; i < P1_bCount; i++) {
-			if (P1_Bubble[i] && Collision(Tile_Bubble1[i], Monster1.left, (Monster1.top + Monster1.bottom) / 2) &&
-				Tile_Bubble1[i].right - 6 <= Monster1.left && Monster1.left <= Tile_Bubble1[i].right + 6) {
-				Monster1.left = Tile_Bubble1[i].right;
-				Monster1.right = Monster1.left + Monster1_CX;
-			}
-		}
-		break;
-	case M_RIGHT:
-		if (Monster1.right <= Tile[12][14].right - 5) {
-			Monster1.left += 4;
-			Monster1.right += 4;
-			for (int i = 0; i < Tile_CountY; i++)
-				for (int j = 0; j < Tile_CountX; j++) {
-					if ((Collision(Tile[i][j], Monster1.right, Monster1.top + 1) || Collision(Tile[i][j], Monster1.right, Monster1.bottom - 1)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
-						Monster1.right = Tile[i][j].left;
-						Monster1.left = Monster1.right - Monster1_CX;
-						yPos_Mon1 = M_LEFT;
-					}
-					if (Tile[i][j].left <= Monster1.left && Monster1.left <= Tile[i][j].left + 2 &&
-						((Tile[i][j].top <= Monster1.top && Monster1.top <= Tile[i][j].top + 2) || (Tile[i][j].bottom - 2 <= Monster1.bottom && Monster1.bottom <= Tile[i][j].bottom))) {
-						// 상
-						if (Tile_Enable_Move[Sel_Map][i - 1][j] && !isBox[Sel_Map][i - 1][j] && random == 0)
-							yPos_Mon1 = M_UP;
-						// 하
-						else if (Tile_Enable_Move[Sel_Map][i + 1][j] && !isBox[Sel_Map][i + 1][j] && random == 1)
-							yPos_Mon1 = M_DOWN;
-					}
-				}
-		}
-		else {
-			Monster1.right = Tile[12][14].right;
-			Monster1.left = Monster1.right - Monster1_CX;
-			if (yPos_Mon1 == M_RIGHT)
-				yPos_Mon1 = M_LEFT;
-		}
-		// 물풍선 체크
-		for (int i = 0; i < P1_bCount; i++) {
-			if (P1_Bubble[i] && Collision(Tile_Bubble1[i], Monster1.right, (Monster1.top + Monster1.bottom) / 2) &&
-				Tile_Bubble1[i].left - 6 <= Monster1.right && Monster1.right <= Tile_Bubble1[i].left + 6) {
-				Monster1.right = Tile_Bubble1[i].left;
-				Monster1.left = Monster1.right - Monster1_CX;
-			}
-		}
-		break;
-	case M_UP:
-		if (Monster1.top >= StartY + 5) {
-			Monster1.top -= 4;
-			Monster1.bottom -= 4;
-			for (int i = 0; i < Tile_CountY; i++)
-				for (int j = 0; j < Tile_CountX; j++) {
-					if ((Collision(Tile[i][j], Monster1.left + 1, Monster1.top) || Collision(Tile[i][j], Monster1.right - 1, Monster1.top)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
-						Monster1.top = Tile[i][j].bottom;
-						Monster1.bottom = Monster1.top + Monster1_CY;
-						yPos_Mon1 = M_DOWN;
-					}
-					if (Tile[i][j].top <= Monster1.top && Monster1.top <= Tile[i][j].top + 2 &&
-						((Tile[i][j].left <= Monster1.left && Monster1.left <= Tile[i][j].left + 2) || (Tile[i][j].right - 2 <= Monster1.right && Monster1.right <= Tile[i][j].right))) {
-						// 좌
-						if (Tile_Enable_Move[Sel_Map][i][j - 1] && !isBox[Sel_Map][i][j - 1] && random == 0)
-							yPos_Mon1 = M_LEFT;
-						// 우
-						else if (Tile_Enable_Move[Sel_Map][i][j + 1] && !isBox[Sel_Map][i][j + 1] && random == 1)
-							yPos_Mon1 = M_RIGHT;
-					}
-				}
-		}
-		else {
-			Monster1.top = StartY;
-			Monster1.bottom = Monster1.top + Monster1_CY;
-			if (yPos_Mon1 == M_UP)
-				yPos_Mon1 = M_DOWN;
-		}
-		// 물풍선 체크
-		for (int i = 0; i < P1_bCount; i++) {
-			if (P1_Bubble[i] && Collision(Tile_Bubble1[i], (Monster1.left + Monster1.right) / 2, Monster1.top) &&
-				Tile_Bubble1[i].bottom - 6 <= Monster1.top && Monster1.top <= Tile_Bubble1[i].bottom + 6) {
-				Monster1.top = Tile_Bubble1[i].bottom;
-				Monster1.bottom = Monster1.top + Monster1_CY;
-			}
-		}
-		break;
-	case M_DOWN:
-		if (Monster1.bottom <= Tile[12][14].bottom - 5) {
-			Monster1.top += 4;
-			Monster1.bottom += 4;
-			for (int i = 0; i < Tile_CountY; i++)
-				for (int j = 0; j < Tile_CountX; j++) {
-					if ((Collision(Tile[i][j], Monster1.left + 1, Monster1.bottom) || Collision(Tile[i][j], Monster1.right - 1, Monster1.bottom)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
-						Monster1.bottom = Tile[i][j].top;
-						Monster1.top = Monster1.bottom - Monster1_CY;
-						yPos_Mon1 = M_UP;
-					}
-					if (Tile[i][j].top <= Monster1.top && Monster1.top <= Tile[i][j].top + 2 &&
-						((Tile[i][j].left <= Monster1.left && Monster1.left <= Tile[i][j].left + 2) || (Tile[i][j].right - 2 <= Monster1.right && Monster1.right <= Tile[i][j].right))) {
-						// 좌
-						if (Tile_Enable_Move[Sel_Map][i][j - 1] && !isBox[Sel_Map][i][j - 1] && random == 0)
-							yPos_Mon1 = M_LEFT;
-						// 우
-						else if (Tile_Enable_Move[Sel_Map][i][j + 1] && !isBox[Sel_Map][i][j + 1] && random == 1)
-							yPos_Mon1 = M_RIGHT;
-					}
-
-				}
-		}
-		else {
-			Monster1.bottom = Tile[12][14].bottom;
-			Monster1.top = Monster1.bottom - Monster1_CY;
-			if (yPos_Mon1 == M_DOWN)
-				yPos_Mon1 = M_UP;
-		}
-		// 물풍선 체크
-		for (int i = 0; i < P1_bCount; i++) {
-			if (P1_Bubble[i] && Collision(Tile_Bubble1[i], (Monster1.left + Monster1.right) / 2, Monster1.bottom) &&
-				Tile_Bubble1[i].top - 6 <= Monster1.bottom && Monster1.bottom <= Tile_Bubble1[i].top + 6) {
-				Monster1.bottom = Tile_Bubble1[i].top;
-				Monster1.top = Monster1.bottom - Monster1_CY;
-			}
-		}
-		break;
-	}
-	switch (yPos_Mon2) {
-	case M_LEFT:
-		if (Monster2.left >= StartX + 5) {
-			Monster2.left -= 5;
-			Monster2.right -= 5;
-			for (int i = 0; i < Tile_CountY; i++)
-				for (int j = 0; j < Tile_CountX; j++) {
-					if ((Collision(Tile[i][j], Monster2.left, Monster2.top + 1) || Collision(Tile[i][j], Monster2.left, Monster2.bottom - 1)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
-						Monster2.left = Tile[i][j].right;
-						Monster2.right = Monster2.left + Monster2_CX;
-						yPos_Mon2 = M_RIGHT;
-					}
-					if (Tile[i][j].left <= Monster2.left && Monster2.left <= Tile[i][j].left + 2 &&
-						((Tile[i][j].top <= Monster2.top && Monster2.top <= Tile[i][j].top + 2) || (Tile[i][j].bottom - 2 <= Monster2.bottom && Monster2.bottom <= Tile[i][j].bottom))) {
-						// 상
-						if (Tile_Enable_Move[Sel_Map][i - 1][j] && !isBox[Sel_Map][i - 1][j] && random == 0)
-							yPos_Mon2 = M_UP;
-						// 하
-						else if (Tile_Enable_Move[Sel_Map][i + 1][j] && !isBox[Sel_Map][i + 1][j] && random == 1)
-							yPos_Mon2 = M_DOWN;
-						// 우
-						/*else if (Tile_Enable_Move[Sel_Map][i][j + 1] && !isBox[Sel_Map][i][j + 1] && random == M_RIGHT)
-						yPos_Mon2 = M_RIGHT;*/
-					}
-				}
-		}
-		else {
-			Monster2.left = StartX;
-			Monster2.right = Monster2.left + Monster2_CX;
-			if (yPos_Mon2 == M_LEFT)
-				yPos_Mon2 = M_RIGHT;
-		}
-		// 물풍선 체크
-		for (int i = 0; i < P1_bCount; i++) {
-			if (P1_Bubble[i] && Collision(Tile_Bubble1[i], Monster2.left, (Monster2.top + Monster2.bottom) / 2) &&
-				Tile_Bubble1[i].right - 6 <= Monster2.left && Monster2.left <= Tile_Bubble1[i].right + 6) {
-				Monster2.left = Tile_Bubble1[i].right;
-				Monster2.right = Monster2.left + Monster2_CX;
-			}
-		}
-		break;
-	case M_RIGHT:
-		if (Monster2.right <= Tile[12][14].right - 5) {
-			Monster2.left += 5;
-			Monster2.right += 5;
-			for (int i = 0; i < Tile_CountY; i++)
-				for (int j = 0; j < Tile_CountX; j++) {
-					if ((Collision(Tile[i][j], Monster2.right, Monster2.top + 1) || Collision(Tile[i][j], Monster2.right, Monster2.bottom - 1)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
-						Monster2.right = Tile[i][j].left;
-						Monster2.left = Monster2.right - Monster2_CX;
-						yPos_Mon2 = M_LEFT;
-					}
-					if (Tile[i][j].left <= Monster2.left && Monster2.left <= Tile[i][j].left + 2 &&
-						((Tile[i][j].top <= Monster2.top && Monster2.top <= Tile[i][j].top + 2) || (Tile[i][j].bottom - 2 <= Monster2.bottom && Monster2.bottom <= Tile[i][j].bottom))) {
-						// 상
-						if (Tile_Enable_Move[Sel_Map][i - 1][j] && !isBox[Sel_Map][i - 1][j] && random == 0)
-							yPos_Mon2 = M_UP;
-						// 하
-						else if (Tile_Enable_Move[Sel_Map][i + 1][j] && !isBox[Sel_Map][i + 1][j] && random == 1)
-							yPos_Mon2 = M_DOWN;
-						// 좌
-						/*if (Tile_Enable_Move[Sel_Map][i][j - 1] && !isBox[Sel_Map][i][j - 1] && random == M_LEFT)
-						yPos_Mon2 = M_LEFT;*/
-					}
-				}
-		}
-		else {
-			Monster2.right = Tile[12][14].right;
-			Monster2.left = Monster2.right - Monster2_CX;
-			if (yPos_Mon2 == M_RIGHT)
-				yPos_Mon2 = M_LEFT;
-		}
-		// 물풍선 체크
-		for (int i = 0; i < P1_bCount; i++) {
-			if (P1_Bubble[i] && Collision(Tile_Bubble1[i], Monster2.right, (Monster2.top + Monster2.bottom) / 2) &&
-				Tile_Bubble1[i].left - 6 <= Monster2.right && Monster2.right <= Tile_Bubble1[i].left + 6) {
-				Monster2.right = Tile_Bubble1[i].left;
-				Monster2.left = Monster2.right - Monster2_CX;
-			}
-		}
-		break;
-	case M_UP:
-		if (Monster2.top >= StartY + 5) {
-			Monster2.top -= 5;
-			Monster2.bottom -= 5;
-			for (int i = 0; i < Tile_CountY; i++)
-				for (int j = 0; j < Tile_CountX; j++) {
-					if ((Collision(Tile[i][j], Monster2.left + 1, Monster2.top) || Collision(Tile[i][j], Monster2.right - 1, Monster2.top)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
-						Monster2.top = Tile[i][j].bottom;
-						Monster2.bottom = Monster2.top + Monster2_CY;
-						yPos_Mon2 = M_DOWN;
-					}
-					if (Tile[i][j].top <= Monster2.top && Monster2.top <= Tile[i][j].top + 2 &&
-						((Tile[i][j].left <= Monster2.left && Monster2.left <= Tile[i][j].left + 2) || (Tile[i][j].right - 2 <= Monster2.right && Monster2.right <= Tile[i][j].right))) {
-						// 좌
-						if (Tile_Enable_Move[Sel_Map][i][j - 1] && !isBox[Sel_Map][i][j - 1] && random == 0)
-							yPos_Mon2 = M_LEFT;
-						// 우
-						else if (Tile_Enable_Move[Sel_Map][i][j + 1] && !isBox[Sel_Map][i][j + 1] && random == 1)
-							yPos_Mon2 = M_RIGHT;
-						// 하
-						/*else if (Tile_Enable_Move[Sel_Map][i + 1][j] && !isBox[Sel_Map][i + 1][j] && random == M_DOWN)
-						yPos_Mon2 = M_DOWN;*/
-					}
-				}
-		}
-		else {
-			Monster2.top = StartY;
-			Monster2.bottom = Monster2.top + Monster2_CY;
-			if (yPos_Mon2 == M_UP)
-				yPos_Mon2 = M_DOWN;
-		}
-		// 물풍선 체크
-		for (int i = 0; i < P1_bCount; i++) {
-			if (P1_Bubble[i] && Collision(Tile_Bubble1[i], (Monster2.left + Monster2.right) / 2, Monster2.top) &&
-				Tile_Bubble1[i].bottom - 6 <= Monster2.top && Monster2.top <= Tile_Bubble1[i].bottom + 6) {
-				Monster2.top = Tile_Bubble1[i].bottom;
-				Monster2.bottom = Monster2.top + Monster2_CY;
-			}
-		}
-		break;
-	case M_DOWN:
-		if (Monster2.bottom <= Tile[12][14].bottom - 5) {
-			Monster2.top += 5;
-			Monster2.bottom += 5;
-			for (int i = 0; i < Tile_CountY; i++)
-				for (int j = 0; j < Tile_CountX; j++) {
-					if ((Collision(Tile[i][j], Monster2.left + 1, Monster2.bottom) || Collision(Tile[i][j], Monster2.right - 1, Monster2.bottom)) && (isBox[Sel_Map][i][j] || !Tile_Enable_Move[Sel_Map][i][j])) {
-						Monster2.bottom = Tile[i][j].top;
-						Monster2.top = Monster2.bottom - Monster2_CY;
-						yPos_Mon2 = M_UP;
-					}
-					if (Tile[i][j].top <= Monster2.top && Monster2.top <= Tile[i][j].top + 2 &&
-						((Tile[i][j].left <= Monster2.left && Monster2.left <= Tile[i][j].left + 2) || (Tile[i][j].right - 2 <= Monster2.right && Monster2.right <= Tile[i][j].right))) {
-						// 좌
-						if (Tile_Enable_Move[Sel_Map][i][j - 1] && !isBox[Sel_Map][i][j - 1] && random == 0)
-							yPos_Mon2 = M_LEFT;
-						// 우
-						else if (Tile_Enable_Move[Sel_Map][i][j + 1] && !isBox[Sel_Map][i][j + 1] && random == 1)
-							yPos_Mon2 = M_RIGHT;
-						// 상
-						/*if (Tile_Enable_Move[Sel_Map][i - 1][j] && !isBox[Sel_Map][i - 1][j] && random == M_UP)
-						yPos_Mon2 = M_UP;*/
-					}
-
-				}
-		}
-		else {
-			Monster2.bottom = Tile[12][14].bottom;
-			Monster2.top = Monster2.bottom - Monster2_CY;
-			if (yPos_Mon2 == M_DOWN)
-				yPos_Mon2 = M_UP;
-		}
-		// 물풍선 체크
-		for (int i = 0; i < P1_bCount; i++) {
-			if (P1_Bubble[i] && Collision(Tile_Bubble1[i], (Monster2.left + Monster2.right) / 2, Monster2.bottom) &&
-				Tile_Bubble1[i].top - 6 <= Monster2.bottom && Monster2.bottom <= Tile_Bubble1[i].top + 6) {
-				Monster2.bottom = Tile_Bubble1[i].top;
-				Monster2.top = Monster2.bottom - Monster2_CY;
-			}
-		}
-		break;
-	}
-
-	if ((IntersectRect(&rc, &Monster1, &Player1) && Mon1_Live) || (IntersectRect(&rc, &Monster2, &Player1) && Mon2_Live)) {
-		P1_Die = TRUE;
-		SetTimer(hwnd, Die, 150, (TIMERPROC)TimeProc_Die);
-	}
-	if ((IntersectRect(&rc, &Monster1, &Player2) && Mon1_Live) || (IntersectRect(&rc, &Monster2, &Player2) && Mon2_Live)) {
-		P2_Die = TRUE;
-		SetTimer(hwnd, Die, 150, (TIMERPROC)TimeProc_Die);
-	}
-
-	InvalidateRect(hWnd, NULL, false);
-}
 
 void CALLBACK TimeProc_Text(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
@@ -2012,19 +1566,20 @@ void CALLBACK TimeProc_Recv_Bubble(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwT
 		return;
 	else if (Bubble_Arrive)
 	{
-		P1_Power = Recv_Bubble_Packet->power;
-		for (int i = 0; i < P1_bCount; ++i)
+		InputPacket* pPacket =  (InputPacket*)Recv_Packet;
+
+		for (int i = 0; i < Player_bCount[pPacket->idx_player]; ++i)
 		{
-			if (!P1_Bubble[i] && !P1_Bubble_Flow[i])
+			if (!Player_Bubble[pPacket->idx_player][i] && !Player_Bubble_Flow[pPacket->idx_player][i])
 			{
 				for (int a = 0; a < 7; ++a)
-					bEffect[a] = TRUE;
-				P1_Bubble[i] = TRUE;
+					bEffect[pPacket->idx_player][a] = TRUE;
+				Player_Bubble[pPacket->idx_player][i] = TRUE;
 				CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Bubble_On.ogg");
-				Tile_Bubble1[i].left = Recv_Bubble_Packet->x;
-				Tile_Bubble1[i].top = Recv_Bubble_Packet->y;
-				Tile_Bubble1[i].right = Tile_Bubble1[i].left + Tile_CX;
-				Tile_Bubble1[i].bottom = Tile_Bubble1[i].top + Tile_CY;
+				Tile_Bubble[pPacket->idx_player][i].left = pPacket->x;
+				Tile_Bubble[pPacket->idx_player][i].top = pPacket->y;
+				Tile_Bubble[pPacket->idx_player][i].right = pPacket->x + Tile_CX;
+				Tile_Bubble[pPacket->idx_player][i].bottom = pPacket->y + Tile_CY;
 				Bubble_Arrive = false;
 				return;
 			}
@@ -2037,57 +1592,48 @@ void KEY_DOWN_P1(HWND hWnd)
 {
 	if (GameState == INGAME)
 	{
-		if (!P1_Die && P1_Live) {
-			if (GetAsyncKeyState(VK_CONTROL) & 0x8000 && P1_InBubble && P1_N) {
+		if (!bDie[Client_Idx] && Player_Live[Client_Idx]) {
+			if (GetAsyncKeyState(VK_CONTROL) & 0x8000 && bInBubble[Client_Idx] && P1_N) {
 				SetEvent(hSendEvent);
 				//P1_Speed = P1_tSpeed;
 				//P1_InBubble = FALSE;
 				//CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Character_Revival.ogg");
 			}
 
-			if (GetAsyncKeyState(VK_DOWN) & 0x8000) {
-				if (!P1_Move)
-				{
-					yPos_P1 = DOWN;
-					SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
-					P1_Move = TRUE;
+			if (!Player_Move[Client_Idx])
+			{
+				if (GetAsyncKeyState(VK_DOWN) & 0x8000) {
+					yPos_Player[Client_Idx] = DOWN;
+					SetTimer(hwnd, P1, Player_Speed[Client_Idx], (TIMERPROC)TimeProc_P1_Move);
+					Player_Move[Client_Idx] = TRUE;
+				}
+				if (GetAsyncKeyState(VK_UP) & 0x8000) {
+					yPos_Player[Client_Idx] = UP;
+					SetTimer(hwnd, P1, Player_Speed[Client_Idx], (TIMERPROC)TimeProc_P1_Move);
+					Player_Move[Client_Idx] = TRUE;
+				}
+				if (GetAsyncKeyState(VK_LEFT) & 0x8000) {
+					yPos_Player[Client_Idx] = LEFT;
+					SetTimer(hwnd, P1, Player_Speed[Client_Idx], (TIMERPROC)TimeProc_P1_Move);
+					Player_Move[Client_Idx] = TRUE;
+				}
+				if (GetAsyncKeyState(VK_RIGHT) & 0x8000) {
+					yPos_Player[Client_Idx] = RIGHT;
+					SetTimer(hwnd, P1, Player_Speed[Client_Idx], (TIMERPROC)TimeProc_P1_Move);
+					Player_Move[Client_Idx] = TRUE;
 				}
 			}
-			if (GetAsyncKeyState(VK_UP) & 0x8000) {
-				if (!P1_Move)
-				{
-					yPos_P1 = UP;
-					SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
-					P1_Move = TRUE;
-				}
-			}
-			if (GetAsyncKeyState(VK_LEFT) & 0x8000) {
-				if (!P1_Move)
-				{
-					yPos_P1 = LEFT;
-					SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
-					P1_Move = TRUE;
-				}
-			}
-			if (GetAsyncKeyState(VK_RIGHT) & 0x8000) {
-				if (!P1_Move)
-				{
-					yPos_P1 = RIGHT;
-					SetTimer(hwnd, P1, P1_Speed, (TIMERPROC)TimeProc_P1_Move);
-					P1_Move = TRUE;
-				}
-			}
-			if (GetAsyncKeyState(VK_SPACE) & 0x8000 && !P1_InBubble) {
+			if (GetAsyncKeyState(VK_SPACE) & 0x8000 && !bInBubble[Client_Idx]) {
 				
-				for (int i = 0; i < P1_bCount; ++i)
+				for (int i = 0; i < Player_bCount[Client_Idx]; ++i)
 				{
-					if (!P1_Bubble[i] && !P1_Bubble_Flow[i])
+					if (!Player_Bubble[Client_Idx][i] && !Player_Bubble_Flow[Client_Idx][i])
 					{
 						for (int a = 0; a < 7; ++a)
-							bEffect[a] = TRUE;
+							bEffect[Client_Idx][a] = TRUE;
 
 						for (int j = 0; j < P1_bCount; ++j) {
-							if (Collision(Tile_Bubble1[j], (Player1.right + Player1.left) / 2, (Player1.top + Player1.bottom) / 2) || Collision(Tile_Bubble2[j], (Player1.right + Player1.left) / 2, (Player1.top + Player1.bottom) / 2)) {
+							if (Collision(Tile_Bubble[Client_Idx][j], (Player[Client_Idx].right + Player[Client_Idx].left) / 2, (Player[Client_Idx].top + Player[Client_Idx].bottom) / 2) || Collision(Tile_Bubble2[j], (Player[Client_Idx].right + Player[Client_Idx].left) / 2, (Player[Client_Idx].top + Player[Client_Idx].bottom) / 2)) {
 								return;
 							}
 						}
@@ -2096,8 +1642,8 @@ void KEY_DOWN_P1(HWND hWnd)
 						for (int a = 0; a < Tile_CountY; a++)
 							for (int b = 0; b < Tile_CountX; b++)
 							{
-								if (Collision(Tile[a][b], (Player1.right + Player1.left) / 2, (Player1.top + Player1.bottom) / 2)) {
-									Tile_Bubble1[i] = Tile[a][b];
+								if (Collision(Tile[a][b], (Player[Client_Idx].right + Player[Client_Idx].left) / 2, (Player[Client_Idx].top + Player[Client_Idx].bottom) / 2)) {
+									Tile_Bubble[Client_Idx][i] = Tile[a][b];
 									// 물풍선 패킷 생성
 									WaitForSingleObject(hSendEvent, INFINITE);
 									if(!Send_Client_Packet)
@@ -2120,134 +1666,16 @@ void KEY_UP_P1(WPARAM wParam, HWND hWnd)
 		Helper = false;
 		break;
 	case VK_DOWN:
-		if (yPos_P1 == DOWN) {
-			KillTimer(hwnd, P1);
-			xPos_P1 = 0;
-			P1_Move = FALSE;
-		}
-		break;
+		if (yPos_P1 != DOWN) break;
 	case VK_UP:
-		if (yPos_P1 == UP) {
-			KillTimer(hwnd, P1);
-			xPos_P1 = 0;
-			P1_Move = FALSE;
-		}
-		break;
+		if (yPos_P1 != UP) break;
 	case VK_LEFT:
-		if (yPos_P1 == LEFT) {
-			KillTimer(hwnd, P1);
-			xPos_P1 = 0;
-			P1_Move = FALSE;
-		}
-		break;
+		if (yPos_P1 != LEFT)break;
 	case VK_RIGHT:
-		if (yPos_P1 == RIGHT) {
-			KillTimer(hwnd, P1);
-			xPos_P1 = 0;
-			P1_Move = FALSE;
-		}
-		break;
-	}
-}
-void KEY_DOWN_P2(HWND hWnd)
-{
-	if (GameState == INGAME) {
-
-
-		if (!P2_Die && P2_Live) {
-			if (GetAsyncKeyState('1') & 0x8000 && P2_InBubble && P2_N) {
-				P2_Speed = P2_tSpeed;
-				P2_InBubble = FALSE;
-				CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Character_Revival.ogg");
-			}
-
-			if (GetAsyncKeyState('S') & 0x8000) {
-				yPos_P2 = DOWN;
-				if (!P2_Move) {
-					SetTimer(hwnd, P2, P2_Speed, (TIMERPROC)TimeProc_P2_Move);
-					P2_Move = TRUE;
-				}
-			}
-			if (GetAsyncKeyState('W') & 0x8000) {
-				yPos_P2 = UP;
-				if (!P2_Move) {
-					SetTimer(hwnd, P2, P2_Speed, (TIMERPROC)TimeProc_P2_Move);
-					P2_Move = TRUE;
-				}
-			}
-			if (GetAsyncKeyState('A') & 0x8000) {
-				yPos_P2 = LEFT;
-				if (!P2_Move) {
-					SetTimer(hwnd, P2, P2_Speed, (TIMERPROC)TimeProc_P2_Move);
-					P2_Move = TRUE;
-				}
-			}
-			if (GetAsyncKeyState('D') & 0x8000) {
-				yPos_P2 = RIGHT;
-				if (!P2_Move) {
-					SetTimer(hwnd, P2, P2_Speed, (TIMERPROC)TimeProc_P2_Move);
-					P2_Move = TRUE;
-				}
-			}
-			if (GetAsyncKeyState(VK_SHIFT) & 0x8000 && !P2_InBubble) {
-				for (int i = 0; i < P2_bCount; ++i)
-				{
-					if (!P2_Bubble[i] && !P2_Bubble_Flow[i])
-					{
-						for (int a = 0; a < 7; ++a)
-							bEffect2[a] = TRUE;
-
-						for (int j = 0; j < P2_bCount; ++j) {
-							if (Collision(Tile_Bubble2[j], (Player2.right + Player2.left) / 2, (Player2.top + Player2.bottom) / 2) || Collision(Tile_Bubble1[j], (Player2.right + Player2.left) / 2, (Player2.top + Player2.bottom) / 2)) {
-								return;
-							}
-						}
-						CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Bubble_On.ogg");
-						for (int a = 0; a < Tile_CountY; a++)
-							for (int b = 0; b < Tile_CountX; b++)
-							{
-								if (Collision(Tile[a][b], (Player2.right + Player2.left) / 2, (Player2.top + Player2.bottom) / 2)) {
-									P2_Bubble[i] = TRUE;
-									Tile_Bubble2[i] = Tile[a][b];
-									return;
-								}
-							}
-					}
-				}
-			}
-		}
-	}
-}
-void KEY_UP_P2(WPARAM wParam, HWND hWnd)
-{
-	switch (wParam) {
-	case 'S':
-		if (yPos_P2 == DOWN) {
-			KillTimer(hwnd, P2);
-			xPos_P2 = 0;
-			P2_Move = FALSE;
-		}
-		break;
-	case 'W':
-		if (yPos_P2 == UP) {
-			KillTimer(hwnd, P2);
-			xPos_P2 = 0;
-			P2_Move = FALSE;
-		}
-		break;
-	case 'A':
-		if (yPos_P2 == LEFT) {
-			KillTimer(hwnd, P2);
-			xPos_P2 = 4;
-			P2_Move = FALSE;
-		}
-		break;
-	case 'D':
-		if (yPos_P2 == RIGHT) {
-			KillTimer(hwnd, P2);
-			xPos_P2 = 0;
-			P2_Move = FALSE;
-		}
+		if (yPos_P1 != RIGHT)break;
+		KillTimer(hwnd, P1);
+		xPos_Player[Client_Idx] = 0;
+		P1_Move = FALSE;
 		break;
 	}
 }
@@ -2272,6 +1700,12 @@ void SetBitmap()
 	TreeBit = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_TREE));
 	P1_Bit = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_C1));
 	P2_Bit = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_C2));
+	
+	Player_Bit[0] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_C1));
+	Player_Bit[1] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_C2));
+	//Player_Bit[2] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_C3));
+	//Player_Bit[3] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_C4));
+
 	Bubble = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_Bubble));
 	Bubble_Bomb = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_BubbleBomb));
 	LogoMenu = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_BGLOGO));
@@ -2283,19 +1717,15 @@ void SetBitmap()
 	MAP2 = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_MAP2));
 
 	P1_NIDDLE_ON = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_NIDDLE));
-	P2_NIDDLE_ON = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_NIDDLE));
-	P1_PIN_ON = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_PIN));
-	P2_PIN_ON = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_PIN));
+
 
 	P1_NIDDLE_OFF = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_OFFNID));
-	P2_NIDDLE_OFF = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_OFFNID));
-	P1_PIN_OFF = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_OFFPIN));
-	P2_PIN_OFF = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_OFFPIN));
+
 
 	Lobby_Start = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_START));
 	P1_On = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_READY));
 	P2_On = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_READY));
-
+	Player_On = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_READY));
 	Items = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_Item));
 
 	Tile2 = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_Tile2));
@@ -2307,7 +1737,7 @@ void SetBitmap()
 	Mon2Bit = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_MON2));
 
 	P1_nOn = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_P1_NIDDLE));
-	P2_nOn = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_P2_NIDDLE));
+
 	Help = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_Help));
 
 	Exit = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_EXIT));
@@ -2433,14 +1863,7 @@ void SetPos()
 	Player2.right = Player2.left + Player_CX;
 	Player2.top = Player2.bottom - Player_CY;
 
-	// 몬스터 좌표설정
-	Monster1 = Tile[0][13];
-	Monster1.right = Monster1.left + Monster1_CX;
-	Monster1.top = Monster1.bottom - Monster1_CY;
 
-	Monster2 = Tile[12][1];
-	Monster2.right = Monster2.left + Monster1_CX;
-	Monster2.top = Monster2.bottom - Monster1_CY;
 
 	//GAMESTATE==In LOBBY 일때 좌표 설정.
 	GameMap1.left = 630;
@@ -2475,8 +1898,21 @@ void SetPos()
 	P2_Name.right = 371;
 	P2_Name.bottom = 108;
 	P1_NIDDLE.left = 44, P1_NIDDLE.top = 243, P1_NIDDLE.right = P1_NIDDLE.left + 33, P1_NIDDLE.bottom = P1_NIDDLE.top + 26;
-	P2_NIDDLE.left = 232, P2_NIDDLE.top = 243, P2_NIDDLE.right = P2_NIDDLE.left + 33, P2_NIDDLE.bottom = P2_NIDDLE.top + 26;
-	P1_PIN.left = 82, P1_PIN.top = 243, P1_PIN.right = P1_PIN.left + 33, P1_PIN.bottom = P1_PIN.top + 26;
-	P2_PIN.left = 268, P2_PIN.top = 243, P2_PIN.right = P2_PIN.left + 33, P2_PIN.bottom = P2_PIN.top + 26;
+
+	// 플레이어 로비 위치
+	/*Player_Robby[0].left = 38;
+	Player_Robby[0].top = 114;
+	Player_Robby[0].right = 38+158;
+	Player_Robby[0].bottom = 114+188;
+
+	Player_Robby[1].left = 227;
+	Player_Robby[1].top = 114;
+	Player_Robby[1].right = 227 + 158;
+	Player_Robby[1].bottom = 114 + 188;*/
+
+	for (int i = 0; i < MAX_PLAYER; ++i) {
+		Player_RobbyX[i] = 38 + 189 * i;
+		Player_RobbyY[i] = 114;
+	}
 }
 

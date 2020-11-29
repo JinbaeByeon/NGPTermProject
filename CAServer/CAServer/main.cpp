@@ -198,8 +198,8 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
     printf("[TCP 서버] %d번째 클라이언트 종료: IP 주소=%s, ID=%d\n",
         client_ID[Thread_idx], inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
     ThreadOn[Thread_idx] = FALSE;
-    Thread_Count = Thread_idx - 1;
-
+    /*Thread_Count = Thread_idx - 1;*/
+    --Thread_Count;
     return 0;
 }
 

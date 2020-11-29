@@ -21,12 +21,11 @@ enum PacketType
 struct InputPacket : public Packet
 {
 	InputPacket(int idx, int x, int y, u_short stat) :Packet(player) { idx_player = idx; this->x = x; this->y = y; status = stat; }
-	InputPacket(int x, int y, int power) :Packet(bubble) { this->x = x; this->y = y; this->power = power; }
+	InputPacket(int idx, int x, int y) :Packet(bubble) { this->x = x; this->y = y; this->idx_player = idx; }
 
 	int idx_player;
-	int power;
 	int x, y;
-	u_short status;
+	u_short status = 0;
 };
 
 struct PlayerPacket : public Packet

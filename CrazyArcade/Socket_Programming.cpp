@@ -8,20 +8,23 @@ extern SOCKET sock;
 // 패킷
 extern PlayerPacket *Recv_Player_Packet;
 extern BubblePacket *Recv_Bubble_Packet;
+extern Packet* Recv_Packet;
 extern Packet* Send_Client_Packet;
 Packet *Recv_Packet_Type;
+
 // 불값
 extern BOOL Bubble_Arrive, Player_Arrive;
 //핸들값
 extern HWND hwnd;
 // 플레이어
 extern RECT Player1, Player2;
+extern RECT Player[MAX_PLAYER];
 // 게임 스테이트 enum GAME_BG { MENU = 1, ROBBY = 2, INGAME = 3};
 extern int GameState;
 extern const int Player_CX = 34;
 extern const int Player_CY = 34;
 extern int Client_Idx;
-
+extern int nPlayer;
 
 int recvn(SOCKET s, char* buf, int len, int flags)
 {
@@ -80,11 +83,12 @@ DWORD WINAPI RecvClient(LPVOID arg)
     printf("야 위치 받았다. %d %d\n\n", Recv_Player_Packet->x, Recv_Player_Packet->y);
     printf("Packet ID : %d\nPacket x : %d\nPacket y : %d\nPacket type : %d\n", Recv_Player_Packet->idx_player, Recv_Player_Packet->x, Recv_Player_Packet->y, Recv_Player_Packet->type);
     Client_Idx = Recv_Player_Packet->idx_player;
+    nPlayer = Client_Idx + 1;
     // 자기 자신의 위치 저장
-    Player1.left = Recv_Player_Packet->x;
-    Player1.top = Recv_Player_Packet->y;
-    Player1.right = Player1.left + Player_CX;
-    Player1.bottom = Player1.top + Player_CY;
+    Player[Client_Idx].left = Recv_Player_Packet->x;
+    Player[Client_Idx].top = Recv_Player_Packet->y;
+    Player[Client_Idx].right = Player[Client_Idx].left + Player_CX;
+    Player[Client_Idx].bottom = Player[Client_Idx].top + Player_CY;
 
 
     // 데이터 통신에 쓰일 while, 이 위에 처음 서버와 연결했을 때의 패킷을 받아오는 작업 필요
@@ -92,9 +96,13 @@ DWORD WINAPI RecvClient(LPVOID arg)
         if (GameState == 2) // 게임 스테이트가 메뉴일 때
         {
             // 다른 플레이어가 접속한다면 받아온다.
-            //retval = recvn(sock, buf, sizeof(PlayerPacket), 0);
-            //buf[retval] = '\0';
+            /*retval = recvn(sock, buf, sizeof(PlayerPacket), 0);
+            buf[retval] = '\0';
             Recv_Player_Packet = (PlayerPacket*)buf;
+            Player[Recv_Player_Packet->idx_player].left = Recv_Player_Packet->x;
+            Player[Recv_Player_Packet->idx_player].top = Recv_Player_Packet->y;
+            Player[Recv_Player_Packet->idx_player].right = Recv_Player_Packet->x + Player_CX;
+            Player[Recv_Player_Packet->idx_player].bottom = Recv_Player_Packet->y + Player_CY;*/
         }
         else if (GameState == 3)
         {
