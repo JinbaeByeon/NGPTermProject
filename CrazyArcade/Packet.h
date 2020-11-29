@@ -1,5 +1,4 @@
 #pragma once
-#define MAX_PLAYER 4
 
 
 // 이동 = 1, 물풍선 = 2

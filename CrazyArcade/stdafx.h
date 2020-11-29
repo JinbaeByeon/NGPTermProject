@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <io.h>
 
+#define MAX_PLAYER 4
 
 using namespace std;
 using namespace FMOD;
