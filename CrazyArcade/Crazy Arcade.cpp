@@ -21,7 +21,6 @@ void CALLBACK TimeProc_InBubble(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime
 void CALLBACK TimeProc_Die(HWND hWnd, UINT uMsg, UINT ideEvent, DWORD dwTime);
 void CALLBACK TimeProc_Monster_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 void CALLBACK TimeProc_Text(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
-void CALLBACK TimeProc_Recv_Bubble(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 void SetPos();
 void Animation();
 void SetBitmap();
@@ -38,11 +37,8 @@ void KEY_UP_P2(WPARAM wParam, HWND hWnd);
 HANDLE hRecvEvent, hSendEvent, hConnectEvent, hBubbleEvent, hPlayerEvent, hInputEvent;
 // 소켓
 SOCKET sock;
-// 불 값
-BOOL Bubble_Arrive = false, Player_Arrive = false;
 // 패킷
 InputPacket *Recv_Player_Packet;
-BubblePacket *Recv_Bubble_Packet;
 InputPacket* Send_Client_Packet = 0;
 int Client_Idx;
 
@@ -301,7 +297,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM  lParam)
 				CSoundMgr::GetInstance()->PlayEffectSound2(L"SFX_Word_Start.ogg");
 				TextOn = TRUE;
 				SetTimer(hWnd, 8, 750, (TIMERPROC)TimeProc_Text);
-				SetTimer(hwnd, Recv_Bubble, 750, (TIMERPROC)TimeProc_Recv_Bubble);
 				GameState = INGAME;
 				bSceneChange = true;
 				if (SelectMap1)
@@ -2192,32 +2187,6 @@ void CALLBACK TimeProc_Text(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 			KillTimer(hWnd, 8);
 			Counting = 0;
 			bSceneChange = false;
-		}
-	}
-}
-
-void CALLBACK TimeProc_Recv_Bubble(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
-{
-	if (Bubble_Arrive == false)
-		return;
-	else if (Bubble_Arrive)
-	{
-		P1_Power = Recv_Bubble_Packet->power;
-		for (int i = 0; i < P1_bCount; ++i)
-		{
-			if (!P1_Bubble[i] && !P1_Bubble_Flow[i])
-			{
-				for (int a = 0; a < 7; ++a)
-					bEffect[a] = TRUE;
-				P1_Bubble[i] = TRUE;
-				CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Bubble_On.ogg");
-				Tile_Bubble1[i].left = Recv_Bubble_Packet->x;
-				Tile_Bubble1[i].top = Recv_Bubble_Packet->y;
-				Tile_Bubble1[i].right = Tile_Bubble1[i].left + Tile_CX;
-				Tile_Bubble1[i].bottom = Tile_Bubble1[i].top + Tile_CY;
-				Bubble_Arrive = false;
-				return;
-			}
 		}
 	}
 }
