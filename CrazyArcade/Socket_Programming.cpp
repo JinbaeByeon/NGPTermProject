@@ -20,6 +20,10 @@ extern const int Player_CX = 34;
 extern const int Player_CY = 34;
 extern int Client_Idx;
 extern int nPlayer;
+extern int xPos_Player[4];
+extern int yPos_Player[4];
+extern enum Player_Position { LEFT = 3, RIGHT = 2, UP = 0, DOWN = 1 };
+
 
 
 int recvn(SOCKET s, char* buf, int len, int flags)
@@ -124,7 +128,26 @@ DWORD WINAPI RecvClient(LPVOID arg)
             if (Recv_Player_Packet->type == player)
             {
                 printf("플레이어 패킷 수신 -> type : %d, idx : %d, x : %d, y : %d, status : %d\n\n",Recv_Player_Packet->type, Recv_Player_Packet->idx_player, Recv_Player_Packet->x, Recv_Player_Packet->y, Recv_Player_Packet->status);
-                SetEvent(hPlayerEvent);
+                if (Player[Recv_Player_Packet->idx_player].left > Recv_Player_Packet->x)
+                {
+                    yPos_Player[Recv_Player_Packet->idx_player] = LEFT;
+                }
+                else if (Player[Recv_Player_Packet->idx_player].left < Recv_Player_Packet->x)
+                {
+                    yPos_Player[Recv_Player_Packet->idx_player] = RIGHT;
+                }
+                else if (Player[Recv_Player_Packet->idx_player].top > Recv_Player_Packet->y)
+                {
+                    yPos_Player[Recv_Player_Packet->idx_player] = DOWN;
+                }
+                else if (Player[Recv_Player_Packet->idx_player].top < Recv_Player_Packet->y)
+                {
+                    yPos_Player[Recv_Player_Packet->idx_player] = UP;
+                }
+                Player[Recv_Player_Packet->idx_player].left = Recv_Player_Packet->x;
+                Player[Recv_Player_Packet->idx_player].right = Player[Client_Idx].left + Player_CX;
+                Player[Recv_Player_Packet->idx_player].top = Recv_Player_Packet->y;
+                Player[Recv_Player_Packet->idx_player].bottom = Recv_Player_Packet->y + Player_CY;
                 // 데이터 받은거 처리 부분 구현 필요
                 // Rect[Recv_Player_Packet->index] 에 대해 x,y, 상태를 반영
                 // 이 때, 에니매이션 구현을 통해 Rect[]에 값을 저장하기 전에 이동 방향, 상태에 대한 변화를 파악

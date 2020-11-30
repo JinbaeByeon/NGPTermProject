@@ -1231,16 +1231,8 @@ void CALLBACK TimeProc_Bubble_Flow(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwT
 
 void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
-	SetEvent(hSendEvent);
-	WaitForSingleObject(hPlayerEvent, 10);
-
-	Player[Client_Idx].left = Recv_Player_Packet->x;
-	Player[Client_Idx].right = Player[Client_Idx].left + Player_CX;
-	Player[Client_Idx].top = Recv_Player_Packet->y;
-	Player[Client_Idx].bottom = Recv_Player_Packet->y + Player_CY;
-	ResetEvent(hPlayerEvent);
-
 	RECT tmpRECT = Player[Client_Idx];
+
 	switch (yPos_P1) {
 	case LEFT:
 		if (tmpRECT.left >= StartX + 10) {
@@ -1380,6 +1372,7 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 	if (tmpRECT.left != Player[Client_Idx].left || tmpRECT.top != Player[Client_Idx].top) {
 		WaitForSingleObject(hSendEvent, INFINITE);
 		Send_Client_Packet = new InputPacket(Client_Idx, tmpRECT.left, tmpRECT.top, 0);
+		Send_Client_Packet->type = player;
 		SetEvent(hInputEvent);
 	}
 	InvalidateRect(hWnd, NULL, FALSE);
