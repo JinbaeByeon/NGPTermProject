@@ -1,12 +1,13 @@
 #include "Socket_Programming.h"
 #include "Packet.h"
- 
+#include "SoundMgr.h"
+
 // 이벤트
 extern HANDLE hRecvEvent, hSendEvent, hConnectEvent, hPlayerEvent, hBubbleEvent, hInputEvent;
 // 소켓
 extern SOCKET sock;
 // 패킷
-extern InputPacket *Recv_Player_Packet;
+extern InputPacket* Recv_Player_Packet;
 extern InputPacket* Send_Client_Packet;
 
 //핸들값
@@ -23,7 +24,16 @@ extern int nPlayer;
 extern int xPos_Player[4];
 extern int yPos_Player[4];
 extern enum Player_Position { LEFT = 3, RIGHT = 2, UP = 0, DOWN = 1 };
+extern enum GAME_BG { MENU = 1, ROBBY, INGAME };
+extern int Sel_Map;
 
+extern BOOL TextOn; 
+extern bool bSceneChange;
+extern BOOL SelectMap1, SelectMap2;					//맵선택 
+
+
+
+extern void CALLBACK TimeProc_Text(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 
 
 int recvn(SOCKET s, char* buf, int len, int flags)
@@ -78,7 +88,7 @@ DWORD WINAPI RecvClient(LPVOID arg)
         MessageBox(hwnd, L"연결 안 됨", L"연결됨", MB_OK);
     else
         MessageBox(hwnd, L"연결됨", L"연결됨?", MB_OK);
-    
+
 
     // 커넥트 이후 자신의 플레이어 패킷 수신
     printf("여기\n");
@@ -90,16 +100,11 @@ DWORD WINAPI RecvClient(LPVOID arg)
     printf("Packet ID : %d\nPacket x : %d\nPacket y : %d\nPacket type : %d\n", Recv_Player_Packet->idx_player, Recv_Player_Packet->x, Recv_Player_Packet->y, Recv_Player_Packet->type);
     Client_Idx = Recv_Player_Packet->idx_player;
     nPlayer = Client_Idx + 1;
-    // 자기 자신의 위치 저장
-    Player[Client_Idx].left = Recv_Player_Packet->x;
-    Player[Client_Idx].top = Recv_Player_Packet->y;
-    Player[Client_Idx].right = Player[Client_Idx].left + Player_CX;
-    Player[Client_Idx].bottom = Player[Client_Idx].top + Player_CY;
 
 
     // 데이터 통신에 쓰일 while, 이 위에 처음 서버와 연결했을 때의 패킷을 받아오는 작업 필요
     while (1) {
-        if (GameState == 2) // 게임 스테이트가 메뉴일 때
+        if (GameState == ROBBY) // 게임 스테이트가 메뉴일 때
         {
             retval = recvn(sock, buf, sizeof(InputPacket), 0);
             if (retval == SOCKET_ERROR)
@@ -109,15 +114,25 @@ DWORD WINAPI RecvClient(LPVOID arg)
             printf("Packet ID : %d\nPacket x : %d\nPacket y : %d\nPacket type : %d\n", Recv_Player_Packet->idx_player, Recv_Player_Packet->x, Recv_Player_Packet->y, Recv_Player_Packet->type);
             if (Recv_Player_Packet->type == start)
             {
+                printf("시작하랍신다~\n");
                 // 게임 스타트 (GameState 3으로 바꾸고 사운드랑 불값 체인지 필요
+                CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Button_Off.ogg");
+                CSoundMgr::GetInstance()->PlayEffectSound2(L"SFX_Word_Start.ogg");
+                TextOn = TRUE;
+                SetTimer(hwnd, 8, 750, (TIMERPROC)TimeProc_Text);
+                GameState = INGAME;
+                bSceneChange = true;
+                if (SelectMap1)
+                    Sel_Map = 0;
+                else
+                    Sel_Map = 1;
             }
             else if (Recv_Player_Packet->type == player)
             {
-                // 다른 플레이어 추가 작업 필요
-                // Client_Idx를 제외한 Rect[] 배열에 저장한다.
+                nPlayer++;
             }
         }
-        else if (GameState == 3)
+        else if (GameState == INGAME)
         {
             retval = recvn(sock, buf, sizeof(InputPacket), 0);
             if (retval == SOCKET_ERROR)
@@ -127,27 +142,20 @@ DWORD WINAPI RecvClient(LPVOID arg)
             printf("%d 타입 패킷 수신\n", Recv_Player_Packet->type);
             if (Recv_Player_Packet->type == player)
             {
-                printf("플레이어 패킷 수신 -> type : %d, idx : %d, x : %d, y : %d, status : %d\n\n",Recv_Player_Packet->type, Recv_Player_Packet->idx_player, Recv_Player_Packet->x, Recv_Player_Packet->y, Recv_Player_Packet->status);
-               /* if (Player[Recv_Player_Packet->idx_player].left > Recv_Player_Packet->x)
-                {
-                    yPos_Player[Recv_Player_Packet->idx_player] = LEFT;
-                }
-                else if (Player[Recv_Player_Packet->idx_player].left < Recv_Player_Packet->x)
-                {
-                    yPos_Player[Recv_Player_Packet->idx_player] = RIGHT;
-                }
-                else if (Player[Recv_Player_Packet->idx_player].top > Recv_Player_Packet->y)
-                {
-                    yPos_Player[Recv_Player_Packet->idx_player] = DOWN;
-                }
-                else if (Player[Recv_Player_Packet->idx_player].top < Recv_Player_Packet->y)
-                {
-                    yPos_Player[Recv_Player_Packet->idx_player] = UP;
-                }*/
+                printf("플레이어 패킷 수신 -> type : %d, idx : %d, x : %d, y : %d, status : %d\n\n", Recv_Player_Packet->type, Recv_Player_Packet->idx_player, Recv_Player_Packet->x, Recv_Player_Packet->y, Recv_Player_Packet->status);
                 Player[Recv_Player_Packet->idx_player].left = Recv_Player_Packet->x;
                 Player[Recv_Player_Packet->idx_player].right = Player[Client_Idx].left + Player_CX;
                 Player[Recv_Player_Packet->idx_player].top = Recv_Player_Packet->y;
                 Player[Recv_Player_Packet->idx_player].bottom = Recv_Player_Packet->y + Player_CY;
+                if (Recv_Player_Packet->status == STOP)
+                {
+                    xPos_Player[Recv_Player_Packet->idx_player] = 0;
+                }
+                else if (yPos_Player[Recv_Player_Packet->idx_player] != Recv_Player_Packet->status)
+                {
+                    yPos_Player[Recv_Player_Packet->idx_player] = Recv_Player_Packet->status;
+                    xPos_Player[Recv_Player_Packet->idx_player] = 0;
+                }
                 // 데이터 받은거 처리 부분 구현 필요
                 // Rect[Recv_Player_Packet->index] 에 대해 x,y, 상태를 반영
                 // 이 때, 에니매이션 구현을 통해 Rect[]에 값을 저장하기 전에 이동 방향, 상태에 대한 변화를 파악
@@ -203,7 +211,7 @@ DWORD WINAPI SendClient(LPVOID arg)
         while (1)
         {
             WaitForSingleObject(hInputEvent, INFINITE);
-            printf("플레이어 패킷 송신 -> type : %d idx : %d, x : %d, y : %d, status : %d\n",Send_Client_Packet->type, Send_Client_Packet->idx_player, Send_Client_Packet->x, Send_Client_Packet->y, Send_Client_Packet->status);
+            printf("플레이어 패킷 송신 -> type : %d idx : %d, x : %d, y : %d, status : %d\n", Send_Client_Packet->type, Send_Client_Packet->idx_player, Send_Client_Packet->x, Send_Client_Packet->y, Send_Client_Packet->status);
             send(sock, (char*)Send_Client_Packet, sizeof(InputPacket), 0);
             delete Send_Client_Packet;
             Send_Client_Packet = NULL;

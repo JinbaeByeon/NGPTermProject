@@ -242,7 +242,7 @@ BOOL Player_Remove[4];
 int Sel_Map;
 
 
-static bool bSceneChange = true;
+bool bSceneChange = true;
 //static bool bEffect[7] = { true,true,true,true,true,true,true };
 static bool bEffect2[7] = { true,true,true,true,true,true,true };
 static bool bEffect[4][7] = { true, };
@@ -325,17 +325,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM  lParam)
 				Send_Client_Packet = new InputPacket(Client_Idx, 0, 0, 0);
 				Send_Client_Packet->type = ready;
 				SetEvent(hInputEvent);
-
-				CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Button_Off.ogg");
-				CSoundMgr::GetInstance()->PlayEffectSound2(L"SFX_Word_Start.ogg");
-				TextOn = TRUE;
-				SetTimer(hWnd, 8, 750, (TIMERPROC)TimeProc_Text);
-				GameState = INGAME;
-				bSceneChange = true;
-				if (SelectMap1)
-					Sel_Map = 0;
-				else
-					Sel_Map = 1;
 			}
 			if (Collision(GameMap1, M_X, M_Y))
 			{
@@ -462,7 +451,6 @@ void Animation()
 	{
 		if (bSceneChange)
 		{
-
 			CSoundMgr::GetInstance()->PlayBGM(L"BGM_Prepare.ogg");
 			bSceneChange = false;
 		}
@@ -720,13 +708,13 @@ void Animation()
 
 					}
 					////¹°Ç³¼±¿¡ °¤Èù »óÅÂ
-					else if (bInBubble)
+					else if (bInBubble[i])
 					{
 						SelectObject(mem2dc, Player_Bit[i]);
 						TransparentBlt(mem1dc, Player[i].left - xGap_Char, Player[i].bottom - Char_CY, Char_CX, Char_CY, mem2dc, Char_CX * BubbleResource[i], 280, Char_CX, Char_CY, TPColor);
 					}
 					//Á×À½
-					else if (bDie)
+					else if (bDie[i])
 					{
 						SelectObject(mem2dc, Player_Bit[i]);
 						TransparentBlt(mem1dc, Player[i].left - xGap_Char, Player[i].bottom - Char_CY, Char_CX, Char_CY, mem2dc, Char_CX * Player_Dying[i], 420, Char_CX, Char_CY, TPColor);
@@ -1235,11 +1223,15 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 			tmpRECT.right = tmpRECT.left + Player_CX;
 		}
 		// ¹°Ç³¼± Ã¼Å©
-		for (int i = 0; i < P1_bCount; i++) {
-			if (P1_Bubble[i] && Collision(Tile_Bubble1[i], tmpRECT.left, (tmpRECT.top + tmpRECT.bottom) / 2) &&
-				Tile_Bubble1[i].right - 6 <= tmpRECT.left && tmpRECT.left <= Tile_Bubble1[i].right + 6) {
-				tmpRECT.left = Tile_Bubble1[i].right;
-				tmpRECT.right = tmpRECT.left + Player_CX;
+		for (int i = 0; i < nPlayer; i++)
+		{
+			for (int j = 0; j < Player_bCount[i]; j++)
+			{
+				if(Player_Bubble[i][j] && Collision(Tile_Bubble[i][j], tmpRECT.left, (tmpRECT.top + tmpRECT.bottom) / 2) &&
+					Tile_Bubble[i][j].right - 6 <= tmpRECT.left && tmpRECT.left <= Tile_Bubble[i][j].right + 6) {
+					tmpRECT.left = Tile_Bubble[i][j].right;
+					tmpRECT.right = tmpRECT.left + Player_CX;
+				}
 			}
 		}
 		break;
@@ -1268,11 +1260,15 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 			tmpRECT.left = tmpRECT.right - Player_CX;
 		}
 		// ¹°Ç³¼± Ã¼Å©
-		for (int i = 0; i < P1_bCount; i++) {
-			if (P1_Bubble[i] && Collision(Tile_Bubble1[i], tmpRECT.right, (tmpRECT.top + tmpRECT.bottom) / 2) &&
-				Tile_Bubble1[i].left - 6 <= tmpRECT.right && tmpRECT.right <= Tile_Bubble1[i].left + 6) {
-				tmpRECT.right = Tile_Bubble1[i].left;
-				tmpRECT.left = tmpRECT.right - Player_CX;
+		for (int i = 0; i < nPlayer; i++)
+		{
+			for (int j = 0; j < Player_bCount[i]; j++)
+			{
+				if (Player_Bubble[i][j] && Collision(Tile_Bubble[i][j], tmpRECT.right, (tmpRECT.top + tmpRECT.bottom) / 2) &&
+					Tile_Bubble[i][j].left - 6 <= tmpRECT.right && tmpRECT.right <= Tile_Bubble[i][j].left + 6) {
+					tmpRECT.right = Tile_Bubble[i][j].left;
+					tmpRECT.left = tmpRECT.right - Player_CX;
+				}
 			}
 		}
 		break;
@@ -1301,11 +1297,15 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 			tmpRECT.bottom = tmpRECT.top + Player_CY;
 		}
 		// ¹°Ç³¼± Ã¼Å©
-		for (int i = 0; i < P1_bCount; i++) {
-			if (P1_Bubble[i] && Collision(Tile_Bubble1[i], (tmpRECT.left + tmpRECT.right) / 2, tmpRECT.top) &&
-				Tile_Bubble1[i].bottom - 6 <= tmpRECT.top && tmpRECT.top <= Tile_Bubble1[i].bottom + 6) {
-				tmpRECT.top = Tile_Bubble1[i].bottom;
-				tmpRECT.bottom = tmpRECT.top + Player_CY;
+		for (int i = 0; i < nPlayer; i++)
+		{
+			for (int j = 0; j < Player_bCount[i]; j++)
+			{
+				if (Player_Bubble[i][j] && Collision(Tile_Bubble[i][i], (tmpRECT.left + tmpRECT.right) / 2, tmpRECT.top) &&
+					Tile_Bubble[i][j].bottom - 6 <= tmpRECT.top && tmpRECT.top <= Tile_Bubble[i][j].bottom + 6) {
+					tmpRECT.top = Tile_Bubble[i][j].bottom;
+					tmpRECT.bottom = tmpRECT.top + Player_CY;
+				}
 			}
 		}
 		break;
@@ -1334,11 +1334,15 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 			tmpRECT.top = tmpRECT.bottom - Player_CY;
 		}
 		// ¹°Ç³¼± Ã¼Å©
-		for (int i = 0; i < P1_bCount; i++) {
-			if (P1_Bubble[i] && Collision(Tile_Bubble1[i], (tmpRECT.left + tmpRECT.right) / 2, tmpRECT.bottom) &&
-				Tile_Bubble1[i].top - 6 <= tmpRECT.bottom && tmpRECT.bottom <= Tile_Bubble1[i].top + 6) {
-				tmpRECT.bottom = Tile_Bubble1[i].top;
-				tmpRECT.top = tmpRECT.bottom - Player_CY;
+		for (int i = 0; i < nPlayer; i++)
+		{
+			for (int j = 0; j < Player_bCount[i]; j++)
+			{
+				if (Player_Bubble[i][j] && Collision(Tile_Bubble[i][j], (tmpRECT.left + tmpRECT.right) / 2, tmpRECT.bottom) &&
+					Tile_Bubble[i][j].top - 6 <= tmpRECT.bottom && tmpRECT.bottom <= Tile_Bubble[i][j].top + 6) {
+					tmpRECT.bottom = Tile_Bubble[i][j].top;
+					tmpRECT.top = tmpRECT.bottom - Player_CY;
+				}
 			}
 		}
 		break;
@@ -1585,7 +1589,6 @@ void KEY_DOWN_P1(HWND hWnd)
 										Send_Client_Packet->type = PacketType::bubble;
 									}
 									SetEvent(hInputEvent);
-
 									return;
 								}
 							}
@@ -1805,19 +1808,19 @@ void SetPos()
 
 	Player[0] = Tile[0][0];
 	Player[0].right = Player[0].left + Player_CX;
-	Player[0].top = Player[0].bottom + Player_CY;
+	Player[0].bottom = Player[0].top + Player_CY;
 
 	Player[1] = Tile[12][0];
 	Player[1].right = Player[1].left + Player_CX;
-	Player[1].top = Player[1].bottom + Player_CY;
+	Player[1].bottom = Player[1].top + Player_CY;
 
 	Player[2] = Tile[0][13];
 	Player[2].right = Player[2].left + Player_CX;
-	Player[2].top = Player[2].bottom + Player_CY;
+	Player[2].bottom = Player[2].top + Player_CY;
 
 	Player[3] = Tile[12][13];
 	Player[3].right = Player[3].left + Player_CX;
-	Player[3].top = Player[3].bottom + Player_CY;
+	Player[3].bottom = Player[3].top + Player_CY;
 
 
 	//GAMESTATE==In LOBBY ÀÏ¶§ ÁÂÇ¥ ¼³Á¤.
