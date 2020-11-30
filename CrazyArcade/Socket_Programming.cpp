@@ -136,7 +136,9 @@ DWORD WINAPI RecvClient(LPVOID arg)
             }
             else if (Recv_Player_Packet->type == player)
             {
-                Player_Live[nPlayer++] = TRUE;
+                if (Recv_Player_Packet->idx_player + 1 > nPlayer) {
+                    Player_Live[nPlayer++] = TRUE;
+                }
             }
         }
         else if (GameState == INGAME)
