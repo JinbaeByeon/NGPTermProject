@@ -167,10 +167,10 @@ DWORD WINAPI RecvClient(LPVOID arg)
                     xPos_Player[Recv_Player_Packet->idx_player] = 0;
                     Player_Move[Recv_Player_Packet->idx_player] = TRUE;
                 }
-                else
+                /*else
                 {
                     ++xPos_Player[Recv_Player_Packet->idx_player] %= 4;
-                }
+                }*/
                 // 데이터 받은거 처리 부분 구현 필요
                 // Rect[Recv_Player_Packet->index] 에 대해 x,y, 상태를 반영
                 // 이 때, 에니매이션 구현을 통해 Rect[]에 값을 저장하기 전에 이동 방향, 상태에 대한 변화를 파악

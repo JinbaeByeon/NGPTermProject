@@ -913,11 +913,12 @@ void Animation()
 							}
 							if (Itemset[Sel_Map][i][j] == Speed) {
 								CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
-								KillTimer(hwnd, k);
 								if (Player_Speed[k] >= 20)
 									Player_Speed[k] -= 5;
-								if(k==Client_Idx)
-									SetTimer(hwnd, k, Player_Speed[k], (TIMERPROC)TimeProc_P1_Move);
+								if (k == Client_Idx) {
+									KillTimer(hwnd, P1);
+									SetTimer(hwnd, P1, Player_Speed[k], (TIMERPROC)TimeProc_P1_Move);
+								}
 							}
 
 							if (Itemset[Sel_Map][i][j] == MaxPower) {
@@ -926,10 +927,11 @@ void Animation()
 							}
 							if (Itemset[Sel_Map][i][j] == RedDevil) {
 								CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
-								KillTimer(hwnd, k);
 								Player_Speed[k] = 15;
-								if (k == Client_Idx)
-									SetTimer(hwnd, k, Player_Speed[k], (TIMERPROC)TimeProc_P1_Move);
+								if (k == Client_Idx) {
+									KillTimer(hwnd, P1);
+									SetTimer(hwnd, P1, Player_Speed[k], (TIMERPROC)TimeProc_P1_Move);
+								}
 								Player_bCount[k] = 7;
 								Power[k] = 7;
 							}
@@ -1565,9 +1567,10 @@ void KEY_DOWN_P1(HWND hWnd)
 
 						for (int j = 0; j < P1_bCount; ++j) 
 						{
-							if (Collision(Tile_Bubble[Client_Idx][j], (Player[Client_Idx].right + Player[Client_Idx].left) / 2, (Player[Client_Idx].top + Player[Client_Idx].bottom) / 2) || Collision(Tile_Bubble2[j], (Player[Client_Idx].right + Player[Client_Idx].left) / 2, (Player[Client_Idx].top + Player[Client_Idx].bottom) / 2)) {
-								return;
-							}
+							for (int k = 0; k < nPlayer; ++k)
+								if (Collision(Tile_Bubble[k][j], (Player[Client_Idx].right + Player[Client_Idx].left) / 2, (Player[Client_Idx].top + Player[Client_Idx].bottom) / 2)) {
+									return;
+								}
 						}
 						for (int a = 0; a < Tile_CountY; a++)
 							for (int b = 0; b < Tile_CountX; b++)
