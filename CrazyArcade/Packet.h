@@ -16,6 +16,7 @@ enum PacketType
 	item,
 	bubble,
 	ready,
+	end,
 };
 
 struct InputPacket : public Packet
@@ -47,6 +48,10 @@ struct ItemPacket : public Packet
 {
 	int x, y;
 	int value;
+};
+
+enum Status {
+	 MOVE_LEFT = 3, MOVE_RIGHT = 2, MOVE_UP = 0, MOVE_DOWN = 1,
 };
 
 enum ClientPacket {

@@ -1072,16 +1072,16 @@ BOOL InBubble_Collision(RECT rt, int t, int l, int b, int r)
 }
 
 // 물풍선 연쇄작용
-void ChainBomb(RECT Bubble, int Power)
+void ChainBomb(RECT Bubble, int power)
 {
 	RECT rc;
 	RECT Check[5];	// 0: 왼쪽 사각형 / 1: 위쪽 사각형 / 2: 오른쪽 사각형 / 3: 아래쪽 사각형
 	Check[4] = Bubble;
 
-	Check[0] = { Bubble.left - Power * Tile_CX,Bubble.top,Bubble.left,Bubble.bottom };
-	Check[1] = { Bubble.left,Bubble.top - Power * Tile_CY,Bubble.right,Bubble.top };
-	Check[2] = { Bubble.right,Bubble.top,Bubble.right + Power * Tile_CX,Bubble.bottom };
-	Check[3] = { Bubble.left,Bubble.bottom,Bubble.right,Bubble.bottom + Power * Tile_CY };
+	Check[0] = { Bubble.left - power * Tile_CX,Bubble.top,Bubble.left,Bubble.bottom };
+	Check[1] = { Bubble.left,Bubble.top - power * Tile_CY,Bubble.right,Bubble.top };
+	Check[2] = { Bubble.right,Bubble.top,Bubble.right + power * Tile_CX,Bubble.bottom };
+	Check[3] = { Bubble.left,Bubble.bottom,Bubble.right,Bubble.bottom + power * Tile_CY };
 
 
 	int a, b;
@@ -1092,26 +1092,26 @@ void ChainBomb(RECT Bubble, int Power)
 		if (Bubble.right == Tile[0][b].right)
 			break;
 
-	for (int j = 0; j <= Power; ++j) {   // 위
-		if (j == Power || !Tile_Enable_Move[Sel_Map][a - j - 1][b] || Bubble.top - 40 * j == Tile[0][0].top || isBox[Sel_Map][a - j][b]) {
+	for (int j = 0; j <= power; ++j) {   // 위
+		if (j == power || !Tile_Enable_Move[Sel_Map][a - j - 1][b] || Bubble.top - 40 * j == Tile[0][0].top || isBox[Sel_Map][a - j][b]) {
 			Check[1].top = Bubble.top - 40 * j;
 			break;
 		}
 	}
-	for (int j = 0; j <= Power; ++j) {   // 아래
-		if (j == Power || !Tile_Enable_Move[Sel_Map][a + j + 1][b] || Bubble.bottom + 40 * j == Tile[12][14].bottom || isBox[Sel_Map][a + j][b]) {
+	for (int j = 0; j <= power; ++j) {   // 아래
+		if (j == power || !Tile_Enable_Move[Sel_Map][a + j + 1][b] || Bubble.bottom + 40 * j == Tile[12][14].bottom || isBox[Sel_Map][a + j][b]) {
 			Check[3].bottom = Bubble.bottom + 40 * j;
 			break;
 		}
 	}
-	for (int j = 0; j <= Power; ++j) {   // 오른쪽
-		if (j == Power || !Tile_Enable_Move[Sel_Map][a][b + j + 1] || Bubble.right + 40 * j == Tile[12][14].right || isBox[Sel_Map][a][b + j]) {
+	for (int j = 0; j <= power; ++j) {   // 오른쪽
+		if (j == power || !Tile_Enable_Move[Sel_Map][a][b + j + 1] || Bubble.right + 40 * j == Tile[12][14].right || isBox[Sel_Map][a][b + j]) {
 			Check[2].right = Bubble.right + 40 * j;
 			break;
 		}
 	}
-	for (int j = 0; j <= Power; ++j) {   // 왼쪽
-		if (j == Power || !Tile_Enable_Move[Sel_Map][a][b - j - 1] || Bubble.left - 40 * j == Tile[0][0].left || isBox[Sel_Map][a][b - j]) {
+	for (int j = 0; j <= power; ++j) {   // 왼쪽
+		if (j == power || !Tile_Enable_Move[Sel_Map][a][b - j - 1] || Bubble.left - 40 * j == Tile[0][0].left || isBox[Sel_Map][a][b - j]) {
 			Check[0].left = Bubble.left - 40 * j;
 			break;
 		}
@@ -1126,59 +1126,56 @@ void ChainBomb(RECT Bubble, int Power)
 			}
 		}
 
-
-	for (int i = 0; i < 7; i++)
-	{
-		if (P1_Bubble[i] && !P1_Bubble_Boom[i]) {
-			for (int j = 0; j < 4; j++)
-				if (IntersectRect(&rc, &Tile_Bubble1[i], &Check[j])) {
-					P1_Bubble_Boom[i] = TRUE;
-					P1_Bubble_cnt[i] = 0;
-					ChainBomb(Tile_Bubble1[i], P1_Power);
-				}
+	for (int k = 0; k < nPlayer; ++k)
+		for (int i = 0; i < 7; i++)
+		{
+			if (Player_Bubble[k][i] && !Player_Bubble_Boom[k][i]) {
+				for (int j = 0; j < 4; j++)
+					if (IntersectRect(&rc, &Tile_Bubble[k][i], &Check[j])) {
+						Player_Bubble_Boom[k][i] = TRUE;
+						Bubble_cnt[k][i] = 0;
+						ChainBomb(Tile_Bubble[k][i], Power[k]);
+					}
+			}
 		}
-		if (P2_Bubble[i] && !P2_Bubble_Boom[i]) {
-			for (int j = 0; j < 4; j++)
-				if (IntersectRect(&rc, &Tile_Bubble2[i], &Check[j])) {
-					P2_Bubble_Boom[i] = TRUE;
-					P2_Bubble_cnt[i] = 0;
-					ChainBomb(Tile_Bubble2[i], P2_Power);
-				}
-		}
-	}
 }
 
 // 타이머 관련 함수
 void CALLBACK TimeProc_Bubble_BfBoom(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
-	if (P1_Move)
-		++xPos_P1 %= 4;
-	if (P2_Move)
-		++xPos_P2 %= 4;
-
 	++xPos_Bubble %= 4;
+	for(int i=0;i<nPlayer;++i)
+		if (Player_Move[i])
+			++xPos_Player[Client_Idx] %= 4;
 
 
-	if (P1_Die && P2_Die && !Ending) {
+
+	int sum = 0;
+	for (int i = 0; i < nPlayer; ++i) {
+		sum += bDie[i];
+	}
+	if (sum == nPlayer && !Ending) {
 		Ending = TRUE;
 		CSoundMgr::GetInstance()->PlayEffectSound2(L"SFX_Word_Lose.ogg");
 	}
 
-	for (int i = 0; i < 7; i++) {
-		if (P1_Bubble[i] && !P1_Bubble_Boom[i]) {
-			if (++P1_Bubble_cnt[i] == 30) {
-				P1_Bubble_Boom[i] = TRUE;
-				ChainBomb(Tile_Bubble1[i], P1_Power);
-				P1_Bubble_cnt[i] = 0;
-				/*	SetTimer(hWnd, 2, 3, NULL);*/
+	for (int j = 0; j < nPlayer; ++j) {
+		for (int i = 0; i < 7; i++) {
+			if (Player_Bubble[j][i] && !Player_Bubble_Boom[j][i]) {
+				if (++Bubble_cnt[j][i] == 30) {
+					Player_Bubble_Boom[j][i] = TRUE;
+					ChainBomb(Tile_Bubble[j][i], P1_Power);
+					P1_Bubble_cnt[i] = 0;
+					/*	SetTimer(hWnd, 2, 3, NULL);*/
+				}
 			}
-		}
-		if (P2_Bubble[i] && !P2_Bubble_Boom[i]) {
-			if (++P2_Bubble_cnt[i] == 30) {
-				P2_Bubble_Boom[i] = TRUE;
-				ChainBomb(Tile_Bubble2[i], P2_Power);
-				P2_Bubble_cnt[i] = 0;
-				/*	SetTimer(hWnd, 2, 3, NULL);*/
+			if (P2_Bubble[i] && !P2_Bubble_Boom[i]) {
+				if (++P2_Bubble_cnt[i] == 30) {
+					P2_Bubble_Boom[i] = TRUE;
+					ChainBomb(Tile_Bubble2[i], P2_Power);
+					P2_Bubble_cnt[i] = 0;
+					/*	SetTimer(hWnd, 2, 3, NULL);*/
+				}
 			}
 		}
 	}
@@ -1368,12 +1365,12 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 	}
 	// 플레이어 이동 패킷 생성 - 상태 아직 안보냄
 	
-	if (tmpRECT.left != Player[Client_Idx].left || tmpRECT.top != Player[Client_Idx].top) {
+	//if (tmpRECT.left != Player[Client_Idx].left || tmpRECT.top != Player[Client_Idx].top) {
 		WaitForSingleObject(hSendEvent, INFINITE);
-		Send_Client_Packet = new InputPacket(Client_Idx, tmpRECT.left, tmpRECT.top, 0);
+		Send_Client_Packet = new InputPacket(Client_Idx, tmpRECT.left, tmpRECT.top, yPos_Player[Client_Idx]);
 		Send_Client_Packet->type = player;
 		SetEvent(hInputEvent);
-	}
+	//}
 	InvalidateRect(hWnd, NULL, FALSE);
 }
 
@@ -1595,7 +1592,7 @@ void KEY_DOWN_P1(HWND hWnd)
 								return;
 							}
 						}
-						P1_Bubble[i] = TRUE;
+						Player_Bubble[Client_Idx][i] = TRUE;
 						CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Bubble_On.ogg");
 						for (int a = 0; a < Tile_CountY; a++)
 							for (int b = 0; b < Tile_CountX; b++)
@@ -1604,8 +1601,10 @@ void KEY_DOWN_P1(HWND hWnd)
 									Tile_Bubble[Client_Idx][i] = Tile[a][b];
 									// 물풍선 패킷 생성
 									WaitForSingleObject(hSendEvent, INFINITE);
-									if(!Send_Client_Packet)
+									if (!Send_Client_Packet) {
 										Send_Client_Packet = new InputPacket(Tile[a][b].left, Tile[a][b].left, P1_Power);
+										Send_Client_Packet->type = PacketType::bubble;
+									}
 									SetEvent(hInputEvent);
 
 									return;
@@ -1619,13 +1618,20 @@ void KEY_DOWN_P1(HWND hWnd)
 }
 void KEY_UP_P1(WPARAM wParam, HWND hWnd)
 {
+	if ((wParam == VK_DOWN && yPos_Player[Client_Idx] == DOWN) ||
+		(wParam == VK_UP && yPos_Player[Client_Idx] == UP) ||
+		(wParam == VK_LEFT && yPos_Player[Client_Idx] == LEFT) ||
+		(wParam == VK_RIGHT && yPos_Player[Client_Idx] == RIGHT)) {
+		KillTimer(hwnd, P1);
+		xPos_Player[Client_Idx] = 0;
+		Player_Move[Client_Idx] = FALSE;
+	}
 	switch (wParam) {
 	case VK_F1:
 		Helper = false;
-		break;
+		break;/*
 	case VK_DOWN:
-		if (yPos_Player[Client_Idx] != DOWN)
-			break;
+		if (yPos_Player[Client_Idx] != DOWN)break;
 	case VK_UP:
 		if (yPos_Player[Client_Idx] != UP) break;
 	case VK_LEFT:
@@ -1634,8 +1640,8 @@ void KEY_UP_P1(WPARAM wParam, HWND hWnd)
 		if (yPos_Player[Client_Idx] != RIGHT)break;
 		KillTimer(hwnd, P1);
 		xPos_Player[Client_Idx] = 0;
-		P1_Move = FALSE;
-		break;
+		Player_Move[Client_Idx] = FALSE;
+		break;*/
 	}
 }
 

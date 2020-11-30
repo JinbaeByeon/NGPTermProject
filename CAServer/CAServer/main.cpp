@@ -30,7 +30,6 @@ PacketFunc m_PF;
 
 int GameState = Robby; // 게임 흐름
 int SendPacket_Idx = 0;
-int count = 0;
 int Accept_count = 0; // 클라이언트가 서버에 접속한 횟수
 
 
@@ -196,8 +195,9 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
     printf("[TCP 서버] %d번째 클라이언트 종료: IP 주소=%s, ID=%d\n",
         client_ID[Thread_idx], inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
     ThreadOn[Thread_idx] = FALSE;
-    Thread_Count = 0;
-
+    Thread_Count = -1;
+    GameState = Robby;
+    --Accept_count;
     return 0;
 }
 
@@ -239,7 +239,6 @@ int main(int argc, char* argv[])
 
     int recv_ClientID = 0;
 
-    int count = 0;
 
     hSendEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
     hRecvEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
