@@ -32,7 +32,7 @@ extern bool bSceneChange;
 extern BOOL SelectMap1, SelectMap2;					//맵선택 
 
 extern BOOL Player_Live[MAX_PLAYER];
-
+extern BOOL Player_Move[MAX_PLAYER];
 
 extern void CALLBACK TimeProc_Text(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 
@@ -131,7 +131,7 @@ DWORD WINAPI RecvClient(LPVOID arg)
             }
             else if (Recv_Player_Packet->type == player)
             {
-                nPlayer++;
+                Player_Live[nPlayer++] = TRUE;
             }
         }
         else if (GameState == INGAME)
@@ -142,7 +142,7 @@ DWORD WINAPI RecvClient(LPVOID arg)
             buf[retval] = '\0';
             Recv_Player_Packet = (InputPacket*)buf;
             printf("%d 타입 패킷 수신\n", Recv_Player_Packet->type);
-            if (Recv_Player_Packet->type == player)
+            if (Recv_Player_Packet->type == PacketType:: player)
             {
                 printf("플레이어 패킷 수신 -> type : %d, idx : %d, x : %d, y : %d, status : %d\n\n", Recv_Player_Packet->type, Recv_Player_Packet->idx_player, Recv_Player_Packet->x, Recv_Player_Packet->y, Recv_Player_Packet->status);
                 Player[Recv_Player_Packet->idx_player].left = Recv_Player_Packet->x;
@@ -152,11 +152,13 @@ DWORD WINAPI RecvClient(LPVOID arg)
                 if (Recv_Player_Packet->status == STOP)
                 {
                     xPos_Player[Recv_Player_Packet->idx_player] = 0;
+                    Player_Move[Recv_Player_Packet->idx_player] = FALSE;
                 }
                 else if (yPos_Player[Recv_Player_Packet->idx_player] != Recv_Player_Packet->status)
                 {
                     yPos_Player[Recv_Player_Packet->idx_player] = Recv_Player_Packet->status;
                     xPos_Player[Recv_Player_Packet->idx_player] = 0;
+                    Player_Move[Recv_Player_Packet->idx_player] = TRUE;
                 }
                 // 데이터 받은거 처리 부분 구현 필요
                 // Rect[Recv_Player_Packet->index] 에 대해 x,y, 상태를 반영

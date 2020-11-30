@@ -1108,7 +1108,7 @@ void CALLBACK TimeProc_Bubble_BfBoom(HWND hWnd, UINT uMsg, UINT idEvent, DWORD d
 		++xPos_Bubble %= 4;
 		for (int i = 0; i < nPlayer; ++i)
 			if (Player_Move[i])
-				++xPos_Player[Client_Idx] %= 4;
+				++xPos_Player[i] %= 4;
 
 
 
@@ -1649,8 +1649,8 @@ void SetBitmap()
 	
 	Player_Bit[0] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_C1));
 	Player_Bit[1] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_C2));
-	//Player_Bit[2] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_C3));
-	//Player_Bit[3] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_C4));
+	Player_Bit[2] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_C3));
+	Player_Bit[3] = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_C4));
 
 	Bubble = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_Bubble));
 	Bubble_Bomb = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_BubbleBomb));
@@ -1809,15 +1809,15 @@ void SetPos()
 	Player[0].right = Player[0].left + Player_CX;
 	Player[0].bottom = Player[0].top + Player_CY;
 
-	Player[1] = Tile[12][0];
+	Player[1] = Tile[12][1];
 	Player[1].right = Player[1].left + Player_CX;
 	Player[1].bottom = Player[1].top + Player_CY;
 
-	Player[2] = Tile[0][13];
+	Player[2] = Tile[1][13];
 	Player[2].right = Player[2].left + Player_CX;
 	Player[2].bottom = Player[2].top + Player_CY;
 
-	Player[3] = Tile[12][13];
+	Player[3] = Tile[13][13];
 	Player[3].right = Player[3].left + Player_CX;
 	Player[3].bottom = Player[3].top + Player_CY;
 
