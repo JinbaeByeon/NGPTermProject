@@ -16,7 +16,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
 void CALLBACK TimeProc_Bubble_BfBoom(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 void CALLBACK TimeProc_Bubble_Flow(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
-void CALLBACK TimeProc_P2_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 void CALLBACK TimeProc_InBubble(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 void CALLBACK TimeProc_Die(HWND hWnd, UINT uMsg, UINT ideEvent, DWORD dwTime);
 void CALLBACK TimeProc_Text(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
@@ -222,7 +221,7 @@ RECT P1_Name, P2_Name;
 RECT Player_Name[4];
 
 BOOL P1_Live = TRUE, P2_Live = TRUE;
-BOOL Player_Live[4] = { TRUE, };
+BOOL Player_Live[4] = { false, };
 
 int P1_Speed, P2_Speed;
 int Player_Speed[4];
@@ -469,16 +468,16 @@ void Animation()
 			TransparentBlt(mem1dc, 500, 487, BG_X / 2, BG_Y, mem2dc, BG_X / 2, 0, BG_X / 2, BG_Y, RGB(0, 255, 0));
 		}
 
-		for (int i = 0; i < nPlayer; ++i) {
-			if (Player_Live[i] == FALSE)
+		for (int i = 0; i < MAX_PLAYER; ++i) {
+			if (!Player_Live[i])
 			{
 				oldBit2 = (HBITMAP)SelectObject(mem2dc, Player_On);
-				BitBlt(mem1dc, Player_RobbyX[i], Player_RobbyY[i], 158, 188, mem2dc, 0, 0, SRCCOPY);
+				BitBlt(mem1dc, Player_RobbyX[i], Player_RobbyY[i], 158, 219, mem2dc, 0, 0, SRCCOPY);
 			}
 
 		}
 
-		if (P1_Live == FALSE)
+		/*if (P1_Live == FALSE)
 		{
 			oldBit2 = (HBITMAP)SelectObject(mem2dc, P1_On);
 			BitBlt(mem1dc, 38, 114, 158, 188, mem2dc, 0, 0, SRCCOPY);
@@ -487,7 +486,7 @@ void Animation()
 		{
 			oldBit2 = (HBITMAP)SelectObject(mem2dc, P2_On);
 			BitBlt(mem1dc, 227, 114, 158, 188, mem2dc, 0, 0, SRCCOPY);
-		}
+		}*/
 
 		if (SelectMap1)
 		{
@@ -506,11 +505,11 @@ void Animation()
 
 		if (P1_N && Player_Live[Client_Idx]) {
 			oldBit2 = (HBITMAP)SelectObject(mem2dc, P1_NIDDLE_ON);
-			BitBlt(mem1dc, Player_RobbyX[Client_Idx] + 6, Player_RobbyY[Client_Idx] + 129, 33, 26, mem2dc, 0, 0, SRCCOPY);
+			BitBlt(mem1dc, Player_RobbyX[Client_Idx] + 6, Player_RobbyY[Client_Idx] + 159, 33, 26, mem2dc, 0, 0, SRCCOPY);
 		}
 		else if (!P1_N && Player_Live[Client_Idx]) {
 			oldBit2 = (HBITMAP)SelectObject(mem2dc, P1_NIDDLE_OFF);
-			BitBlt(mem1dc, Player_RobbyX[Client_Idx] + 6, Player_RobbyY[Client_Idx] + 129, 33, 26, mem2dc, 0, 0, SRCCOPY);
+			BitBlt(mem1dc, Player_RobbyX[Client_Idx] + 6, Player_RobbyY[Client_Idx] + 159, 33, 26, mem2dc, 0, 0, SRCCOPY);
 		}
 
 
@@ -1870,7 +1869,7 @@ void SetPos()
 
 	for (int i = 0; i < MAX_PLAYER; ++i) {
 		Player_RobbyX[i] = 38 + 189 * i;
-		Player_RobbyY[i] = 114;
+		Player_RobbyY[i] = 84;
 	}
 }
 

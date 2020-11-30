@@ -31,6 +31,7 @@ extern BOOL TextOn;
 extern bool bSceneChange;
 extern BOOL SelectMap1, SelectMap2;					//맵선택 
 
+extern BOOL Player_Live[MAX_PLAYER];
 
 
 extern void CALLBACK TimeProc_Text(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
@@ -100,7 +101,8 @@ DWORD WINAPI RecvClient(LPVOID arg)
     printf("Packet ID : %d\nPacket x : %d\nPacket y : %d\nPacket type : %d\n", Recv_Player_Packet->idx_player, Recv_Player_Packet->x, Recv_Player_Packet->y, Recv_Player_Packet->type);
     Client_Idx = Recv_Player_Packet->idx_player;
     nPlayer = Client_Idx + 1;
-
+    for (int i = 0; i < nPlayer; ++i)
+        Player_Live[i] = true;
 
     // 데이터 통신에 쓰일 while, 이 위에 처음 서버와 연결했을 때의 패킷을 받아오는 작업 필요
     while (1) {
