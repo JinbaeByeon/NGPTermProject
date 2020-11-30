@@ -187,24 +187,6 @@ BOOL P2_Bubble_Boom[7];
 BOOL Player_Bubble_Boom[4][7];
 
 
-BOOL P1_Bubble_Flow[7];   //폭탄이 터질때를 알려주는 BOOL값
-int P1_MoveResource[7];   //물줄기 리소스 40만큼 이동하기
-int P1_Power;         //물줄기 파워(현재 WM_CREATE에 정의해놓고 사용중
-BOOL P1_InBubble;		//물방울 안에 갇혔을 때
-BOOL P1_Escape;			//탈출했을 때
-BOOL P1_Die;			//죽었을때
-int P1_BubbleResource;	//죽었을때 리소스 반복
-int P1_BubbleCount;		//죽었을때 리소스 반복
-
-
-BOOL P2_Bubble_Flow[7];   //폭탄이 터질때를 알려주는 BOOL값
-int P2_MoveResource[7];   //물줄기 리소스 40만큼 이동하기
-int P2_Power;         //물줄기 파워(현재 WM_CREATE에 정의해놓고 사용중
-BOOL P2_InBubble;
-BOOL P2_Escape;
-BOOL P2_Die;
-int P2_BubbleResource;	//죽었을때 리소스 반복
-int P2_BubbleCount;		//죽었을때 리소스 반복
 
 BOOL Player_Bubble_Flow[4][7];
 int MoveResource[4][7];
@@ -217,7 +199,6 @@ int BubbleCount[4];
 
 
 
-BOOL P1_Move, P2_Move;
 BOOL Player_Move[4];
 
 
@@ -300,13 +281,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM  lParam)
 			Player_bCount[i] = 1;
 			Power[i] = 1;
 		}
-
-		P1_Speed = 35;
-		P2_Speed = 35;
-		P1_bCount = 1;
-		P2_bCount = 1;
-		P1_Power = 1;
-		P2_Power = 1;
 
 		SelectMap1 = TRUE;
 		Sel_Map = 0;
@@ -1038,7 +1012,7 @@ void Animation()
 		}
 
 
-		if (P1_Die && P2_Die && Ending) {
+		if (bDie[0] && bDie[1] && bDie[2] && bDie[3] && Ending) {
 			SelectObject(mem2dc, Texture);
 			TransparentBlt(mem1dc, 150, 250, 405, 62, mem2dc, 0, 62 * 5, 405, 62, RGB(255, 0, 255));
 			SetTimer(hwnd, 8, 100, (TIMERPROC)TimeProc_Text);
@@ -1524,7 +1498,7 @@ void CALLBACK TimeProc_Text(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 		if (++Counting % 66)
 		{
 			TextOn = FALSE;
-			KillTimer(hWnd, 8);
+
 			Counting = 0;
 		}
 	}
@@ -1535,15 +1509,14 @@ void CALLBACK TimeProc_Text(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 		{
 			Ending = FALSE;
 			SetPos();
-			P1_InBubble = false;
-			P1_Die = false;
-			P2_InBubble = false;
-			P2_Die = false;
-			bSceneChange = true;
+			for (int i = 0; i < nPlayer; ++i) {
+				bInBubble[i] = false;
+				bDie[i] = false;
+			}
 			GameState = ROBBY;
-			KillTimer(hWnd, 8);
+
 			Counting = 0;
-			bSceneChange = false;
+			bSceneChange = true;
 		}
 	}
 }
@@ -1608,7 +1581,7 @@ void KEY_DOWN_P1(HWND hWnd)
 									// 물풍선 패킷 생성
 									WaitForSingleObject(hSendEvent, INFINITE);
 									if (!Send_Client_Packet) {
-										Send_Client_Packet = new InputPacket(Tile[a][b].left, Tile[a][b].left, P1_Power);
+										Send_Client_Packet = new InputPacket(Tile[a][b].left, Tile[a][b].left, Power[Client_Idx]);
 										Send_Client_Packet->type = PacketType::bubble;
 									}
 									SetEvent(hInputEvent);
