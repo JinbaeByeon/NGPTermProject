@@ -23,6 +23,11 @@ extern int Client_Idx;
 extern int nPlayer;
 extern int xPos_Player[4];
 extern int yPos_Player[4];
+extern BOOL Player_Bubble[4][7];
+extern RECT Tile_Bubble[4][7];
+extern int Power[4];
+
+
 extern enum Player_Position { LEFT = 3, RIGHT = 2, UP = 0, DOWN = 1 };
 extern enum GAME_BG { MENU = 1, ROBBY, INGAME };
 extern int Sel_Map;
@@ -156,6 +161,10 @@ DWORD WINAPI RecvClient(LPVOID arg)
                     yPos_Player[Recv_Player_Packet->idx_player] = Recv_Player_Packet->status;
                     xPos_Player[Recv_Player_Packet->idx_player] = 0;
                 }
+                else
+                {
+                    ++xPos_Player[Recv_Player_Packet->idx_player] %= 4;
+                }
                 // 데이터 받은거 처리 부분 구현 필요
                 // Rect[Recv_Player_Packet->index] 에 대해 x,y, 상태를 반영
                 // 이 때, 에니매이션 구현을 통해 Rect[]에 값을 저장하기 전에 이동 방향, 상태에 대한 변화를 파악
@@ -163,8 +172,24 @@ DWORD WINAPI RecvClient(LPVOID arg)
             }
             else if (Recv_Player_Packet->type == bubble)
             {
-                SetEvent(hBubbleEvent);
                 printf("버블 패킷 수신 -> type : %d x : %d y : %d\n\n", Recv_Player_Packet->type, Recv_Player_Packet->x, Recv_Player_Packet->y);
+                for (int i = 0; i < 7; i++)
+                {
+                    if (Player_Bubble[Recv_Player_Packet->idx_player][i] == TRUE)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        Tile_Bubble[Recv_Player_Packet->idx_player][i].left = Recv_Player_Packet->x;
+                        Tile_Bubble[Recv_Player_Packet->idx_player][i].right = Tile_Bubble[Client_Idx][i].left + 40;
+                        Tile_Bubble[Recv_Player_Packet->idx_player][i].top = Recv_Player_Packet->y;
+                        Tile_Bubble[Recv_Player_Packet->idx_player][i].bottom = Tile_Bubble[Client_Idx][i].top + 40;
+                        Player_Bubble[Recv_Player_Packet->idx_player][i] = TRUE;
+                        CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Bubble_On.ogg");
+                        break;
+                    }
+                }
                 // 데이터 받은거 처리 부분 구현 필요
                 // 지금은 버블 생성하고 패킷 보내는 형식으로 진행되는데 이걸 보낸 뒤에 버블 패킷 받고 생성하는걸로 수정 필요
             }

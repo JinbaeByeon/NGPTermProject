@@ -512,8 +512,6 @@ void Animation()
 			oldBit2 = (HBITMAP)SelectObject(mem2dc, P1_NIDDLE_OFF);
 			BitBlt(mem1dc, Player_RobbyX[Client_Idx] + 6, Player_RobbyY[Client_Idx] + 129, 33, 26, mem2dc, 0, 0, SRCCOPY);
 		}
-
-
 	}
 
 	if (GameState == INGAME)
@@ -1111,8 +1109,6 @@ void CALLBACK TimeProc_Bubble_BfBoom(HWND hWnd, UINT uMsg, UINT idEvent, DWORD d
 			if (Player_Move[i])
 				++xPos_Player[Client_Idx] %= 4;
 
-
-
 		int sum = 0;
 		for (int i = 0; i < nPlayer; ++i) {
 			sum += bDie[i];
@@ -1350,10 +1346,10 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 	// 플레이어 이동 패킷 생성 - 상태 아직 안보냄
 	
 	//if (tmpRECT.left != Player[Client_Idx].left || tmpRECT.top != Player[Client_Idx].top) {
-		WaitForSingleObject(hSendEvent, INFINITE);
-		Send_Client_Packet = new InputPacket(Client_Idx, tmpRECT.left, tmpRECT.top, yPos_Player[Client_Idx]);
-		Send_Client_Packet->type = player;
-		SetEvent(hInputEvent);
+	WaitForSingleObject(hSendEvent, INFINITE);
+	Send_Client_Packet = new InputPacket(Client_Idx, tmpRECT.left, tmpRECT.top, yPos_Player[Client_Idx]);
+	Send_Client_Packet->type = player;
+	SetEvent(hInputEvent);
 	//}
 	InvalidateRect(hWnd, NULL, FALSE);
 }
@@ -1502,7 +1498,6 @@ void CALLBACK TimeProc_Text(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 		if (++Counting % 66)
 		{
 			TextOn = FALSE;
-
 			Counting = 0;
 		}
 	}
@@ -1562,7 +1557,6 @@ void KEY_DOWN_P1(HWND hWnd)
 				}
 			}
 			if (GetAsyncKeyState(VK_SPACE) & 0x8000 && !bInBubble[Client_Idx]) {
-				
 				for (int i = 0; i < Player_bCount[Client_Idx]; ++i)
 				{
 					if (!Player_Bubble[Client_Idx][i] && !Player_Bubble_Flow[Client_Idx][i])
@@ -1570,13 +1564,12 @@ void KEY_DOWN_P1(HWND hWnd)
 						for (int a = 0; a < 7; ++a)
 							bEffect[Client_Idx][a] = TRUE;
 
-						for (int j = 0; j < P1_bCount; ++j) {
+						for (int j = 0; j < P1_bCount; ++j) 
+						{
 							if (Collision(Tile_Bubble[Client_Idx][j], (Player[Client_Idx].right + Player[Client_Idx].left) / 2, (Player[Client_Idx].top + Player[Client_Idx].bottom) / 2) || Collision(Tile_Bubble2[j], (Player[Client_Idx].right + Player[Client_Idx].left) / 2, (Player[Client_Idx].top + Player[Client_Idx].bottom) / 2)) {
 								return;
 							}
 						}
-						Player_Bubble[Client_Idx][i] = TRUE;
-						CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Bubble_On.ogg");
 						for (int a = 0; a < Tile_CountY; a++)
 							for (int b = 0; b < Tile_CountX; b++)
 							{
@@ -1585,7 +1578,7 @@ void KEY_DOWN_P1(HWND hWnd)
 									// 물풍선 패킷 생성
 									WaitForSingleObject(hSendEvent, INFINITE);
 									if (!Send_Client_Packet) {
-										Send_Client_Packet = new InputPacket(Tile[a][b].left, Tile[a][b].left, Power[Client_Idx]);
+										Send_Client_Packet = new InputPacket(Client_Idx, Tile[a][b].left, Tile[a][b].top);
 										Send_Client_Packet->type = PacketType::bubble;
 									}
 									SetEvent(hInputEvent);
@@ -1607,6 +1600,10 @@ void KEY_UP_P1(WPARAM wParam, HWND hWnd)
 		KillTimer(hwnd, P1);
 		xPos_Player[Client_Idx] = 0;
 		Player_Move[Client_Idx] = FALSE;
+		WaitForSingleObject(hSendEvent, INFINITE);
+		Send_Client_Packet = new InputPacket(Client_Idx, Player[Client_Idx].left, Player[Client_Idx].top, STOP);
+		Send_Client_Packet->type = player;
+		SetEvent(hInputEvent);
 	}
 	switch (wParam) {
 	case VK_F1:
