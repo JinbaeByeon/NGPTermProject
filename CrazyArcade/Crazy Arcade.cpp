@@ -734,13 +734,13 @@ void Animation()
 
 					}
 					////¹°Ç³¼±¿¡ °¤Èù »óÅÂ
-					else if (bInBubble)
+					else if (bInBubble[i])
 					{
 						SelectObject(mem2dc, Player_Bit[i]);
 						TransparentBlt(mem1dc, Player[i].left - xGap_Char, Player[i].bottom - Char_CY, Char_CX, Char_CY, mem2dc, Char_CX * BubbleResource[i], 280, Char_CX, Char_CY, TPColor);
 					}
 					//Á×À½
-					else if (bDie)
+					else if (bDie[i])
 					{
 						SelectObject(mem2dc, Player_Bit[i]);
 						TransparentBlt(mem1dc, Player[i].left - xGap_Char, Player[i].bottom - Char_CY, Char_CX, Char_CY, mem2dc, Char_CX * Player_Dying[i], 420, Char_CX, Char_CY, TPColor);
