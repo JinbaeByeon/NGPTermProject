@@ -8,11 +8,10 @@ int client_ID[3] = { 1, 2, 3 };
 BOOL ThreadOn[3] = { FALSE }; // 스레드 생성 확인
 
 BOOL InitPosition[3] = { FALSE }; // 시작 위치 초기화 확인
-BOOL isSend[3] = { FALSE }; // 송신 확인
 
 int Thread_Count = -1;
 
-HANDLE hSendEvent;
+HANDLE hSendEvent[3];
 HANDLE hRecvEvent;
 
 
@@ -63,7 +62,12 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
             if (!InitPosition[Thread_idx])
             {
                 Accept_count++;
-                SetEvent(hSendEvent);
+                for (int i = 0; i < 3; i++)
+                {
+                    if (Thread_idx != i)
+                        SetEvent(hSendEvent[i]);
+                }
+                SetEvent(hSendEvent[Thread_idx]);
                 EnterCriticalSection(&cs2);
                 m_PF.InitPlayer(m_Map, &Player_P[Thread_idx], Thread_idx);
                 retval = send(client_sock, (char*)&Player_P[Thread_idx], sizeof(InputPacket), 0);
@@ -75,13 +79,17 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                     client_ID[Thread_idx], Player_P[Thread_idx].x
                     , Player_P[Thread_idx].y, Player_P[Thread_idx].type);
                 InitPosition[Thread_idx] = TRUE;
-                ResetEvent(hSendEvent);
+                for (int i = 0; i < 3; i++)
+                {
+                    if (Thread_Count != i)
+                        ResetEvent(hSendEvent[i]);
+                }
                 LeaveCriticalSection(&cs2);
             }
             if (Accept_count - Thread_Count < 1) {
                 if (ThreadOn[Thread_Count])
                 {
-                    WaitForSingleObject(hSendEvent, INFINITE);
+                    WaitForSingleObject(hSendEvent[Thread_Count], INFINITE);
                     EnterCriticalSection(&cs2);
                     m_PF.InitPlayer(m_Map, &Send_P, Thread_Count);
                     retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
@@ -89,13 +97,12 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                         m_SF.err_display("send()");
                         break;
                     }
-                    printf("Send %d번 -> %d번 클라이언트 위치 전송 : %d %d\n",
+                    printf("Send %d번에게 %d번 클라이언트의 위치 전송 : %d %d\n",
                         client_ID[Thread_idx], Send_P.idx_player+1, Send_P.x, Send_P.y);
                     InitPosition[Thread_idx] = TRUE;
                     LeaveCriticalSection(&cs2);
                 }
             }
-            // 준비되면 각 위치 전송 후 시작
             if (Recv_P.type == ready)
             {
                 if (InitPosition[0] || InitPosition[1])
@@ -109,6 +116,7 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                         m_SF.err_display("send()");
                         break;
                     }
+                    printf("Send %d번 게임 시작 신호 보냄\n", client_ID[Thread_idx]);
                     SetEvent(hRecvEvent);
                     GameState = InGame;
                 }
@@ -116,21 +124,15 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
         }
         if (GameState == InGame)
         {
-
-            WaitForSingleObject(hSendEvent, INFINITE);
-            if (!isSend[Thread_idx])
-            {
-                retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
-                if (retval == SOCKET_ERROR) {
-                    m_SF.err_display("send()");
-                    break;
-                }
-                printf("Send %d번: [%d] S->C: type = %d %d %d\n", client_ID[Thread_idx], ntohs(clientaddr.sin_port),
-                    Send_P.type, Send_P.x, Send_P.y);
-                isSend[Thread_idx] = TRUE;
+            WaitForSingleObject(hSendEvent[Thread_idx], INFINITE);
+            retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
+            if (retval == SOCKET_ERROR) {
+                m_SF.err_display("send()");
+                break;
             }
-            if (isSend[0] && isSend[1])
-                SetEvent(hRecvEvent);
+            printf("Send %d번: [%d] S->C: type = %d %d %d\n", client_ID[Thread_idx], ntohs(clientaddr.sin_port),
+                Send_P.type, Send_P.x, Send_P.y);
+            ResetEvent(hSendEvent[Thread_idx]);
         }
 
     }
@@ -182,10 +184,9 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
             m_PF.InitPacket(&Send_P);
             Send_P = Recv_P;
             m_PF.InitPacket(&Recv_P);
-            for (int i = 0; i < 3; i++)
-                isSend[i] = FALSE;
             LeaveCriticalSection(&cs2);
-            SetEvent(hSendEvent);
+            for (int i = 0; i < 3; i++)
+                SetEvent(hSendEvent[i]);
             /*if (!ThreadOn[0] || !ThreadOn[1])
                 break;*/
         }
@@ -241,8 +242,10 @@ int main(int argc, char* argv[])
 
     int count = 0;
 
-    hSendEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
-    hRecvEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    hSendEvent[0] = CreateEvent(NULL, TRUE, TRUE, NULL);
+    hSendEvent[1] = CreateEvent(NULL, TRUE, TRUE, NULL);
+    hSendEvent[2] = CreateEvent(NULL, TRUE, TRUE, NULL);
+    hRecvEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
     InitializeCriticalSection(&cs1);
     InitializeCriticalSection(&cs2);
