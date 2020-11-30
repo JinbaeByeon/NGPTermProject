@@ -209,9 +209,9 @@ int P2_BubbleCount;		//죽었을때 리소스 반복
 BOOL Player_Bubble_Flow[4][7];
 int MoveResource[4][7];
 int Power[4];
-BOOL bInBubble[4];
-BOOL bEscape[4];
-BOOL bDie[4];
+BOOL bInBubble[4] = { false, };
+BOOL bEscape[4] = { false, };
+BOOL bDie[4] = { false, };
 int BubbleResource[4];
 int BubbleCount[4];
 
@@ -1143,57 +1143,61 @@ void ChainBomb(RECT Bubble, int power)
 // 타이머 관련 함수
 void CALLBACK TimeProc_Bubble_BfBoom(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
-	++xPos_Bubble %= 4;
-	for(int i=0;i<nPlayer;++i)
-		if (Player_Move[i])
-			++xPos_Player[Client_Idx] %= 4;
+	if (GameState == INGAME) {
+		++xPos_Bubble %= 4;
+		for (int i = 0; i < nPlayer; ++i)
+			if (Player_Move[i])
+				++xPos_Player[Client_Idx] %= 4;
 
 
 
-	int sum = 0;
-	for (int i = 0; i < nPlayer; ++i) {
-		sum += bDie[i];
-	}
-	if (sum == nPlayer && !Ending) {
-		Ending = TRUE;
-		CSoundMgr::GetInstance()->PlayEffectSound2(L"SFX_Word_Lose.ogg");
-	}
+		int sum = 0;
+		for (int i = 0; i < nPlayer; ++i) {
+			sum += bDie[i];
+		}
+		if (sum == nPlayer && !Ending) {
+			Ending = TRUE;
+			CSoundMgr::GetInstance()->PlayEffectSound2(L"SFX_Word_Lose.ogg");
+		}
 
-	for (int j = 0; j < nPlayer; ++j) {
-		for (int i = 0; i < 7; i++) {
-			if (Player_Bubble[j][i] && !Player_Bubble_Boom[j][i]) {
-				if (++Bubble_cnt[j][i] == 30) {
-					Player_Bubble_Boom[j][i] = TRUE;
-					ChainBomb(Tile_Bubble[j][i], P1_Power);
-					P1_Bubble_cnt[i] = 0;
-					/*	SetTimer(hWnd, 2, 3, NULL);*/
+		for (int j = 0; j < nPlayer; ++j) {
+			for (int i = 0; i < 7; i++) {
+				if (Player_Bubble[j][i] && !Player_Bubble_Boom[j][i]) {
+					if (++Bubble_cnt[j][i] == 30) {
+						Player_Bubble_Boom[j][i] = TRUE;
+						ChainBomb(Tile_Bubble[j][i], Power[j]);
+						Bubble_cnt[j][i] = 0;
+						/*	SetTimer(hWnd, 2, 3, NULL);*/
+					}
 				}
-			}
-			if (P2_Bubble[i] && !P2_Bubble_Boom[i]) {
-				if (++P2_Bubble_cnt[i] == 30) {
-					P2_Bubble_Boom[i] = TRUE;
-					ChainBomb(Tile_Bubble2[i], P2_Power);
-					P2_Bubble_cnt[i] = 0;
-					/*	SetTimer(hWnd, 2, 3, NULL);*/
-				}
+				//if (P2_Bubble[i] && !P2_Bubble_Boom[i]) {
+				//	if (++P2_Bubble_cnt[i] == 30) {
+				//		P2_Bubble_Boom[i] = TRUE;
+				//		ChainBomb(Tile_Bubble2[i], P2_Power);
+				//		P2_Bubble_cnt[i] = 0;
+				//		/*	SetTimer(hWnd, 2, 3, NULL);*/
+				//	}
+				//}
 			}
 		}
-	}
 
-	for (int i = 0; i < 7; i++) {
-		if (P1_Bubble_Boom[i]) {
-			P1_Bubble[i] = FALSE;
-			P1_Bubble_Boom[i] = FALSE;
-			P1_Bubble_Flow[i] = TRUE;
+		for (int j = 0; j < nPlayer; ++j) {
+			for (int i = 0; i < 7; i++) {
+				if (Player_Bubble_Boom[j][i]) {
+					Player_Bubble[j][i] = FALSE;
+					Player_Bubble_Boom[j][i] = FALSE;
+					Player_Bubble_Flow[j][i] = TRUE;
 
-			SetTimer(hwnd, Bubble_Flow, 100, (TIMERPROC)TimeProc_Bubble_Flow);
-		}
-		if (P2_Bubble_Boom[i]) {
-			P2_Bubble[i] = FALSE;
-			P2_Bubble_Boom[i] = FALSE;
-			P2_Bubble_Flow[i] = TRUE;
+					SetTimer(hwnd, Bubble_Flow, 100, (TIMERPROC)TimeProc_Bubble_Flow);
+				}
+				/*if (P2_Bubble_Boom[i]) {
+					P2_Bubble[i] = FALSE;
+					P2_Bubble_Boom[i] = FALSE;
+					P2_Bubble_Flow[i] = TRUE;
 
-			SetTimer(hwnd, Bubble_Flow, 100, (TIMERPROC)TimeProc_Bubble_Flow);
+					SetTimer(hwnd, Bubble_Flow, 100, (TIMERPROC)TimeProc_Bubble_Flow);
+				}*/
+			}
 		}
 	}
 	InvalidateRect(hWnd, NULL, FALSE);
@@ -1201,25 +1205,27 @@ void CALLBACK TimeProc_Bubble_BfBoom(HWND hWnd, UINT uMsg, UINT idEvent, DWORD d
 
 void CALLBACK TimeProc_Bubble_Flow(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
-	for (int i = 0; i < 7; ++i)
-	{
-		if (P1_Bubble_Flow[i] && ++P1_MoveResource[i] == 4) {
-			Tile_Bubble1[i] = { 0,0,0,0 };
-			P1_MoveResource[i] = 0;
-			P1_Bubble_Flow[i] = FALSE;
-			for (int a = 0; a < Tile_CountY; a++)
-				for (int b = 0; b < Tile_CountX; b++)
-					if (Box_Break[a][b])
-						isBox[Sel_Map][a][b] = FALSE;
-		}
-		if (P2_Bubble_Flow[i] && ++P2_MoveResource[i] == 4) {
-			Tile_Bubble2[i] = { 0,0,0,0 };
-			P2_Bubble_Flow[i] = FALSE;
-			P2_MoveResource[i] = 0;
-			for (int a = 0; a < Tile_CountY; a++)
-				for (int b = 0; b < Tile_CountX; b++)
-					if (Box_Break[a][b])
-						isBox[Sel_Map][a][b] = FALSE;
+	for (int j = 0; j < nPlayer; ++j) {
+		for (int i = 0; i < 7; ++i)
+		{
+			if (Player_Bubble_Flow[j][i] && ++MoveResource[j][i] == 4) {
+				Tile_Bubble[j][i] = { 0,0,0,0 };
+				MoveResource[j][i] = 0;
+				Player_Bubble_Flow[j][i] = FALSE;
+				for (int a = 0; a < Tile_CountY; a++)
+					for (int b = 0; b < Tile_CountX; b++)
+						if (Box_Break[a][b])
+							isBox[Sel_Map][a][b] = FALSE;
+			}
+			/*if (P2_Bubble_Flow[i] && ++P2_MoveResource[i] == 4) {
+				Tile_Bubble2[i] = { 0,0,0,0 };
+				P2_Bubble_Flow[i] = FALSE;
+				P2_MoveResource[i] = 0;
+				for (int a = 0; a < Tile_CountY; a++)
+					for (int b = 0; b < Tile_CountX; b++)
+						if (Box_Break[a][b])
+							isBox[Sel_Map][a][b] = FALSE;
+			}*/
 		}
 	}
 	InvalidateRect(hWnd, NULL, FALSE);
@@ -1824,10 +1830,21 @@ void SetPos()
 	//Player1.right = Player1.left + Player_CX;
 	//Player1.top = Player1.bottom - Player_CY;
 
-	Player2 = Tile[12][13];
-	Player2.right = Player2.left + Player_CX;
-	Player2.top = Player2.bottom - Player_CY;
+	Player[0] = Tile[0][0];
+	Player[0].right = Player[0].left + Player_CX;
+	Player[0].top = Player[0].bottom + Player_CY;
 
+	Player[1] = Tile[12][0];
+	Player[1].right = Player[1].left + Player_CX;
+	Player[1].top = Player[1].bottom + Player_CY;
+
+	Player[2] = Tile[0][13];
+	Player[2].right = Player[2].left + Player_CX;
+	Player[2].top = Player[2].bottom + Player_CY;
+
+	Player[3] = Tile[12][13];
+	Player[3].right = Player[3].left + Player_CX;
+	Player[3].top = Player[3].bottom + Player_CY;
 
 
 	//GAMESTATE==In LOBBY 일때 좌표 설정.

@@ -51,7 +51,7 @@ struct ItemPacket : public Packet
 };
 
 enum Status {
-	 MOVE_LEFT = 3, MOVE_RIGHT = 2, MOVE_UP = 0, MOVE_DOWN = 1,
+	MOVE_LEFT = 3, MOVE_RIGHT = 2, MOVE_UP = 0, MOVE_DOWN = 1, STOP = 4,
 };
 
 enum ClientPacket {

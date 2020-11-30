@@ -128,7 +128,7 @@ DWORD WINAPI RecvClient(LPVOID arg)
             if (Recv_Player_Packet->type == player)
             {
                 printf("플레이어 패킷 수신 -> type : %d, idx : %d, x : %d, y : %d, status : %d\n\n",Recv_Player_Packet->type, Recv_Player_Packet->idx_player, Recv_Player_Packet->x, Recv_Player_Packet->y, Recv_Player_Packet->status);
-                if (Player[Recv_Player_Packet->idx_player].left > Recv_Player_Packet->x)
+               /* if (Player[Recv_Player_Packet->idx_player].left > Recv_Player_Packet->x)
                 {
                     yPos_Player[Recv_Player_Packet->idx_player] = LEFT;
                 }
@@ -143,7 +143,7 @@ DWORD WINAPI RecvClient(LPVOID arg)
                 else if (Player[Recv_Player_Packet->idx_player].top < Recv_Player_Packet->y)
                 {
                     yPos_Player[Recv_Player_Packet->idx_player] = UP;
-                }
+                }*/
                 Player[Recv_Player_Packet->idx_player].left = Recv_Player_Packet->x;
                 Player[Recv_Player_Packet->idx_player].right = Player[Client_Idx].left + Player_CX;
                 Player[Recv_Player_Packet->idx_player].top = Recv_Player_Packet->y;
