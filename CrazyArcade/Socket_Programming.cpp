@@ -188,9 +188,9 @@ DWORD WINAPI RecvClient(LPVOID arg)
                     else
                     {
                         Tile_Bubble[Recv_Player_Packet->idx_player][i].left = Recv_Player_Packet->x;
-                        Tile_Bubble[Recv_Player_Packet->idx_player][i].right = Tile_Bubble[Client_Idx][i].left + 40;
+                        Tile_Bubble[Recv_Player_Packet->idx_player][i].right = Tile_Bubble[Recv_Player_Packet->idx_player][i].left + 40;
                         Tile_Bubble[Recv_Player_Packet->idx_player][i].top = Recv_Player_Packet->y;
-                        Tile_Bubble[Recv_Player_Packet->idx_player][i].bottom = Tile_Bubble[Client_Idx][i].top + 40;
+                        Tile_Bubble[Recv_Player_Packet->idx_player][i].bottom = Tile_Bubble[Recv_Player_Packet->idx_player][i].top + 40;
                         Player_Bubble[Recv_Player_Packet->idx_player][i] = TRUE;
                         CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Bubble_On.ogg");
                         break;

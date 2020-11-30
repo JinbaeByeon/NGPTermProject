@@ -1573,7 +1573,6 @@ void KEY_DOWN_P1(HWND hWnd)
 							for (int b = 0; b < Tile_CountX; b++)
 							{
 								if (Collision(Tile[a][b], (Player[Client_Idx].right + Player[Client_Idx].left) / 2, (Player[Client_Idx].top + Player[Client_Idx].bottom) / 2)) {
-									Tile_Bubble[Client_Idx][i] = Tile[a][b];
 									// 물풍선 패킷 생성
 									WaitForSingleObject(hSendEvent, INFINITE);
 									if (!Send_Client_Packet) {
@@ -1743,7 +1742,7 @@ void SetPos()
 				Tile_Enable_Move[0][i][j] = TRUE;
 				if ((j != 6 && j != 7 && j != 8) &&
 					!(j == 0 && (i == 0 || i == 1 || i == 11)) &&
-					!(j == 1 && (i == 0 || i == 11 || i == 12)) &&
+					!(j == 1 && (i == 0 || i == 10 || i == 11 || i == 12)) &&
 					!(j == 12 && i == 1) &&
 					!(j == 13 && (i == 0 || i == 1 || i == 12)) &&
 					!(j == 14 && (i == 1 || i == 11 || i == 12)) &&
@@ -1814,7 +1813,7 @@ void SetPos()
 	Player[2].right = Player[2].left + Player_CX;
 	Player[2].bottom = Player[2].top + Player_CY;
 
-	Player[3] = Tile[13][13];
+	Player[3] = Tile[12][13];
 	Player[3].right = Player[3].left + Player_CX;
 	Player[3].bottom = Player[3].top + Player_CY;
 
