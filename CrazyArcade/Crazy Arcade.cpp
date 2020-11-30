@@ -170,7 +170,6 @@ int yPos_Player[4];
 
 
 
-
 int xPos_Tile;
 int xPos_Bubble;
 int P1_Bubble_cnt[7], P2_Bubble_cnt[7];
@@ -1233,7 +1232,7 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
 	RECT tmpRECT = Player[Client_Idx];
 
-	switch (yPos_P1) {
+	switch (yPos_Player[Client_Idx]) {
 	case LEFT:
 		if (tmpRECT.left >= StartX + 10) {
 			tmpRECT.left -= 5;
@@ -1625,13 +1624,14 @@ void KEY_UP_P1(WPARAM wParam, HWND hWnd)
 		Helper = false;
 		break;
 	case VK_DOWN:
-		if (yPos_P1 != DOWN) break;
+		if (yPos_Player[Client_Idx] != DOWN)
+			break;
 	case VK_UP:
-		if (yPos_P1 != UP) break;
+		if (yPos_Player[Client_Idx] != UP) break;
 	case VK_LEFT:
-		if (yPos_P1 != LEFT)break;
+		if (yPos_Player[Client_Idx] != LEFT)break;
 	case VK_RIGHT:
-		if (yPos_P1 != RIGHT)break;
+		if (yPos_Player[Client_Idx] != RIGHT)break;
 		KillTimer(hwnd, P1);
 		xPos_Player[Client_Idx] = 0;
 		P1_Move = FALSE;
