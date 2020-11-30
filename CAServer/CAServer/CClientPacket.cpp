@@ -4,6 +4,7 @@
 
 void PacketFunc::InitPlayer(CMap m_Map, InputPacket *Send_P, int idx)
 {
+    Send_P->type = player;
     Send_P->idx_player = idx;
     if (idx == 0)
         Send_P->x = m_Map.Tile[0][0].left, Send_P->y = m_Map.Tile[0][0].top
@@ -19,9 +20,8 @@ void PacketFunc::InitPlayer(CMap m_Map, InputPacket *Send_P, int idx)
 void PacketFunc::InitPacket(InputPacket* P)
 {
     P->idx_player = NULL;
-    P->power = NULL;
     P->status = NULL;
     P->x = NULL;
     P->y = NULL;
-    P->power = NULL;
+    P->status = NULL;
 }

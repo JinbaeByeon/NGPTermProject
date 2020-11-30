@@ -10,7 +10,7 @@ BOOL ThreadOn[3] = { FALSE }; // 스레드 생성 확인
 BOOL InitPosition[3] = { FALSE }; // 시작 위치 초기화 확인
 BOOL isSend[3] = { FALSE }; // 송신 확인
 
-int Thread_Count;
+int Thread_Count = -1;
 
 HANDLE hSendEvent;
 HANDLE hRecvEvent;
@@ -19,6 +19,8 @@ HANDLE hRecvEvent;
 InputPacket Send_P;
 InputPacket Recv_P;
 
+InputPacket Player_P[3];
+
 CMap m_Map;
 
 CRITICAL_SECTION cs1, cs2;
@@ -26,9 +28,10 @@ CRITICAL_SECTION cs1, cs2;
 SocketFunc m_SF;
 PacketFunc m_PF;
 
-int Global_step = Accept; // 게임 흐름
+int GameState = Robby; // 게임 흐름
 int SendPacket_Idx = 0;
 int count = 0;
+int Accept_count = 0; // 클라이언트가 서버에 접속한 횟수
 
 
 DWORD WINAPI SendThreadFunc(LPVOID arg)
@@ -41,8 +44,7 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
 
     int len;
 
-    int Thread_idx = Thread_Count - 1; // 0, 1, 2
-    printf("번호: %d\n", Thread_idx);
+    int Thread_idx = Thread_Count; // 0, 1, 2
 
     int startsign = 0;
 
@@ -52,46 +54,67 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
 
     m_PF.InitPacket(&Send_P);
     m_PF.InitPacket(&Recv_P);
+    for (int i = 0;i<3;i++)
+        m_PF.InitPacket(&Player_P[i]);
 
     while (1) {
-        if (Global_step == Accept)
+        if (GameState == Robby)
         {
-            ThreadOn[Thread_idx] = TRUE;
-            if (ThreadOn[0] && ThreadOn[1])
+            if (!InitPosition[Thread_idx])
             {
-                EnterCriticalSection(&cs1);
-                Global_step = Robby;
-                LeaveCriticalSection(&cs1);
+                Accept_count++;
+                SetEvent(hSendEvent);
+                EnterCriticalSection(&cs2);
+                m_PF.InitPlayer(m_Map, &Player_P[Thread_idx], Thread_idx);
+                retval = send(client_sock, (char*)&Player_P[Thread_idx], sizeof(InputPacket), 0);
+                if (retval == SOCKET_ERROR) {
+                    m_SF.err_display("send()");
+                    break;
+                }
+                printf("[TCP 서버] %d번 클라이언트 위치 전송 : %d %d %d\n",
+                    client_ID[Thread_idx], Player_P[Thread_idx].x
+                    , Player_P[Thread_idx].y, Player_P[Thread_idx].type);
+                InitPosition[Thread_idx] = TRUE;
+                ResetEvent(hSendEvent);
+                LeaveCriticalSection(&cs2);
             }
-        }
-        if (Global_step == Robby)
-        {
-            // 준비되면 각 위치 전송 후 시작
-            if (Recv_P.type == ready)
-            {
-                if (!InitPosition[Thread_idx]) {
+            if (Accept_count - Thread_Count < 1) {
+                if (ThreadOn[Thread_Count])
+                {
+                    WaitForSingleObject(hSendEvent, INFINITE);
                     EnterCriticalSection(&cs2);
-                    m_PF.InitPlayer(m_Map, &Send_P, Thread_idx);
+                    m_PF.InitPlayer(m_Map, &Send_P, Thread_Count);
                     retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
                     if (retval == SOCKET_ERROR) {
                         m_SF.err_display("send()");
                         break;
                     }
-                    printf("[TCP 서버] %d번 클라이언트 위치 전송 : %d %d\n",
-                        client_ID[Thread_idx], Send_P.x, Send_P.y);
+                    printf("Send %d번 -> %d번 클라이언트 위치 전송 : %d %d\n",
+                        client_ID[Thread_idx], Send_P.idx_player+1, Send_P.x, Send_P.y);
                     InitPosition[Thread_idx] = TRUE;
                     LeaveCriticalSection(&cs2);
                 }
-                if (InitPosition[0] && InitPosition[1])
+            }
+            // 준비되면 각 위치 전송 후 시작
+            if (Recv_P.type == ready)
+            {
+                if (InitPosition[0] || InitPosition[1])
                 {
-                    //WaitForSingleObject(hSendEvent, INFINITE);
-                    ////printf("%d: 시작 준비 완료\n", Thread_idx);
+                    EnterCriticalSection(&cs1);;
+                    m_PF.InitPacket(&Send_P);
+                    Send_P.type = start;
+                    LeaveCriticalSection(&cs1);
+                    retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
+                    if (retval == SOCKET_ERROR) {
+                        m_SF.err_display("send()");
+                        break;
+                    }
                     SetEvent(hRecvEvent);
-                    Global_step = InGame;
+                    GameState = InGame;
                 }
             }
         }
-        if (Global_step == InGame)
+        if (GameState == InGame)
         {
 
             WaitForSingleObject(hSendEvent, INFINITE);
@@ -102,7 +125,7 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                     m_SF.err_display("send()");
                     break;
                 }
-                printf("Send [%d] S->C: type = %d %d %d\n", ntohs(clientaddr.sin_port),
+                printf("Send %d번: [%d] S->C: type = %d %d %d\n", client_ID[Thread_idx], ntohs(clientaddr.sin_port),
                     Send_P.type, Send_P.x, Send_P.y);
                 isSend[Thread_idx] = TRUE;
             }
@@ -135,27 +158,17 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
     while (1) {
         // 클라이언트와 데이터 통신
 
-        if (Global_step == Robby)
+        if (GameState == Robby)
         {
-            WaitForSingleObject(hRecvEvent, INFINITE);
-            retval = m_SF.recvn(client_sock, (char*)&Recv_P, sizeof(Recv_P), 0);
+            //WaitForSingleObject(hRecvEvent, INFINITE);
+            retval = m_SF.recvn(client_sock, (char*)&Recv_P, sizeof(InputPacket), 0);
             if (retval == SOCKET_ERROR) {
                 m_SF.err_display("recv()");
                 break;
             }
-            printf("Recv [%d] S<-C: %d = 시작 신호\n", ntohs(clientaddr.sin_port), Recv_P.type);
-            if (Recv_P.type == ready)
-            {
-                if (ThreadOn[0]&& ThreadOn[1])
-                {
-                    EnterCriticalSection(&cs1);;
-                    m_PF.InitPacket(&Recv_P);
-                    LeaveCriticalSection(&cs1);
-                    //SetEvent(hRecvEvent);
-                }
-            }
+            printf("Recv %d번: [%d] S<-C: %d = 시작 신호\n", client_ID[Thread_idx], ntohs(clientaddr.sin_port), Recv_P.type);
         }
-        if (Global_step == InGame)
+        if (GameState == InGame)
         {
             //WaitForSingleObject(hRecvEvent, INFINITE);
             EnterCriticalSection(&cs2);
@@ -164,7 +177,7 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
                 m_SF.err_display("recv()");
                 break;
             }
-            printf("Recv [%d] S<-C: type = %d %d %d\n", ntohs(clientaddr.sin_port),
+            printf("Recv %d번:[%d] S<-C: type = %d %d %d\n", client_ID[Thread_idx], ntohs(clientaddr.sin_port),
                 Recv_P.type, Recv_P.x, Recv_P.y);
             m_PF.InitPacket(&Send_P);
             Send_P = Recv_P;
@@ -246,24 +259,25 @@ int main(int argc, char* argv[])
             }
             else
             {
-                ++Thread_Count;
+                Thread_Count++;
                 printf("\n[TCP 서버] %d번 클라이언트 접속: IP 주소=%s, 포트 번호=%d\n",
-                    Thread_Count, inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
+                    Thread_Count+1, inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
                 // 접속한 클라이언트 정보 출력
                 m_Map.Init_Map();
 
                 // 스레드 생성
-                hSendThread[Thread_Count-1] = CreateThread(NULL, 0, SendThreadFunc,
+                hSendThread[Thread_Count] = CreateThread(NULL, 0, SendThreadFunc,
                     (LPVOID)client_sock, 0, NULL);
-                hRecvThread[Thread_Count-1] = CreateThread(NULL, 0, RecvThreadFunc,
+                hRecvThread[Thread_Count] = CreateThread(NULL, 0, RecvThreadFunc,
                     (LPVOID)client_sock, 0, NULL);
-                if (hRecvThread[Thread_Count-1] == NULL && hSendThread[Thread_Count-1] == NULL) {
+                if (hRecvThread[Thread_Count] == NULL && hSendThread[Thread_Count] == NULL) {
                     closesocket(client_sock);
                 }
                 else {
-                    CloseHandle(hRecvThread[Thread_Count-1]);
-                    CloseHandle(hSendThread[Thread_Count-1]);
+                    CloseHandle(hRecvThread[Thread_Count]);
+                    CloseHandle(hSendThread[Thread_Count]);
                 }
+                ThreadOn[Thread_Count] = TRUE;
 
             }
 
