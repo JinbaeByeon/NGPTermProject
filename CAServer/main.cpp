@@ -52,7 +52,7 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
 
     m_PF.InitPacket(&Send_P);
     m_PF.InitPacket(&Recv_P);
-    for (int i = 0;i<MAX_CLIENT;i++)
+    for (int i = 0; i < MAX_CLIENT; i++)
         m_PF.InitPacket(&Player_P[i]);
 
     while (1) {
@@ -74,19 +74,17 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                 printf("[TCP 서버] %d번 클라이언트 위치 전송 : %d %d %d\n",
                     client_ID[Thread_idx], Player_P[Thread_idx].x
                     , Player_P[Thread_idx].y, Player_P[Thread_idx].type);
-               
                 InRobby[Thread_idx] = TRUE;
                 /*for (int i = 0; i < MAX_CLIENT; i++)
                     if (Thread_Count != i)
                         ResetEvent(hSendEvent[i]);*/
                 LeaveCriticalSection(&cs);
             }
-            if (Accept_count - Thread_Count < 1) {
-                if (ThreadOn[Thread_Count])
-                {
-                    //WaitForSingleObject(hSendEvent[Thread_idx], INFINITE);
-                    EnterCriticalSection(&cs);
 
+            if (Accept_count - Thread_Count < 1) {
+                if (ThreadOn[Thread_Count] && !InRobby[Thread_Count])
+                {
+                    EnterCriticalSection(&cs);
                     m_PF.InitPlayer(m_Map, &Send_P, Thread_Count);
                     retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
                     if (retval == SOCKET_ERROR) {
@@ -98,6 +96,7 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                     LeaveCriticalSection(&cs);
                 }
             }
+
             if (Ready[0] && Ready[1])
             {
                 EnterCriticalSection(&cs);;
@@ -194,7 +193,11 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
         }
         if (GameState == GameOver)
         {
-
+            for (int i = 0; i < MAX_CLIENT; i++)
+            {
+                Ready[i] = FALSE;
+                GameState == Robby;
+            }
         }
 
     }
@@ -273,8 +276,8 @@ int main(int argc, char* argv[])
             else
             {
                 Thread_Count++;
-                // 먼저 만들어진 쓰레드 확인
-                for (int i = 0; i < MAX_CLIENT; i++)
+                // 종료 후 다시 실행시 먼저 만들어진 쓰레드 확인
+                for (int i = Thread_Count; i < MAX_CLIENT; i++)
                 {
                     if (ThreadOn[Thread_Count])
                         Thread_Count++;
