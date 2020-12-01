@@ -8,7 +8,7 @@ int client_ID[3] = { 1, 2, 3 };
 BOOL ThreadOn[3] = { FALSE }; // 스레드 생성 확인
 BOOL InRobby[3] = { FALSE }; // 로비 접속 확인
 BOOL Ready[3] = { FALSE }; // 게임 시작 준비 확인
-BOOL ItemReady = FALSE;  // 아이템 초기화 확인
+BOOL ItemReady[3] = { FALSE };  // 아이템 초기화 확인
 
 int Thread_Count = -1; // send+recv스레드 쌍 갯수
 
@@ -101,18 +101,17 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
 
             if (Ready[0] && Ready[1])
             {
-                EnterCriticalSection(&cs);
-
-                if (Thread_idx == 0)
+                if (!ItemReady[Thread_idx])
                 {
+                    EnterCriticalSection(&cs);
                     srand((unsigned)time(NULL));
                     for (int i = 0; i < m_Map.Tile_CountY; i++)
                     {
                         for (int j = 0; j < m_Map.Tile_CountX; j++) {
                             ItemValue = rand() % 30;
                             if (ItemValue != 0 && ItemValue != 7 && m_Map.isBox[0][i][j]) {
-                                Item_P.x = m_Map.Tile[i][j].left;
-                                Item_P.y = m_Map.Tile[i][j].top;
+                                Item_P.x = i;
+                                Item_P.y = j;
                                 Item_P.type = item;
                                 Item_P.value = ItemValue;
                                 retval = send(client_sock, (char*)&Item_P, sizeof(Item_P), 0);
@@ -123,11 +122,12 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                             }
                         }
                     }
-                    printf("여기\n");
-                    ItemReady = TRUE;
+                    LeaveCriticalSection(&cs);
+                    ItemReady[Thread_idx] = TRUE;
                 }
-                if (ItemReady)
+                if (ItemReady[0]&&ItemReady[1])
                 {
+                    EnterCriticalSection(&cs);
                     m_PF.InitPacket(&Send_P);
                     Send_P.type = start;
                     LeaveCriticalSection(&cs);
