@@ -25,3 +25,21 @@ void PacketFunc::InitPacket(InputPacket* P)
     P->y = NULL;
     P->status = NULL;
 }
+
+void PacketFunc::InitItem(ItemPacket* P, CMap m_Map)
+{
+    int ItemValue;
+    srand((unsigned)time(NULL));
+    for (int i = 0; i < m_Map.Tile_CountY; i++)
+    {
+        for (int j = 0; j < m_Map.Tile_CountX; j++) {
+            ItemValue = rand() % 30;
+            if (ItemValue != 0 && ItemValue != 7) {
+                P->x = m_Map.Tile[i][j].left;
+                P->y = m_Map.Tile[i][j].top;
+                P->type = item;
+                P->value = ItemValue;
+            }
+        }
+    }
+}

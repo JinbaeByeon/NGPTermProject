@@ -8,6 +8,7 @@ int client_ID[3] = { 1, 2, 3 };
 BOOL ThreadOn[3] = { FALSE }; // 스레드 생성 확인
 BOOL InRobby[3] = { FALSE }; // 로비 접속 확인
 BOOL Ready[3] = { FALSE }; // 게임 시작 준비 확인
+BOOL ItemReady = FALSE;  // 아이템 초기화 확인
 
 int Thread_Count = -1; // send+recv스레드 쌍 갯수
 
@@ -17,8 +18,8 @@ HANDLE hRecvEvent;
 
 InputPacket Send_P;
 InputPacket Recv_P;
-
 InputPacket Player_P[3]; // 플레이어 초기 정보
+ItemPacket Item_P;
 
 CMap m_Map;
 
@@ -30,6 +31,7 @@ PacketFunc m_PF;
 int GameState = Robby; // 게임 흐름
 int Death_count = 0; // 죽은 유저 수
 int Accept_count = 0; // 클라이언트가 서버에 접속한 횟수
+int ItemValue;
 
 
 DWORD WINAPI SendThreadFunc(LPVOID arg)
@@ -99,18 +101,45 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
 
             if (Ready[0] && Ready[1])
             {
-                EnterCriticalSection(&cs);;
-                m_PF.InitPacket(&Send_P);
-                Send_P.type = start;
-                LeaveCriticalSection(&cs);
-                retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
-                if (retval == SOCKET_ERROR) {
-                    m_SF.err_display("send()");
-                    break;
+                EnterCriticalSection(&cs);
+
+                if (Thread_idx == 0)
+                {
+                    srand((unsigned)time(NULL));
+                    for (int i = 0; i < m_Map.Tile_CountY; i++)
+                    {
+                        for (int j = 0; j < m_Map.Tile_CountX; j++) {
+                            ItemValue = rand() % 30;
+                            if (ItemValue != 0 && ItemValue != 7 && m_Map.isBox[0][i][j]) {
+                                Item_P.x = m_Map.Tile[i][j].left;
+                                Item_P.y = m_Map.Tile[i][j].top;
+                                Item_P.type = item;
+                                Item_P.value = ItemValue;
+                                retval = send(client_sock, (char*)&Item_P, sizeof(Item_P), 0);
+                                if (retval == SOCKET_ERROR) {
+                                    m_SF.err_display("send()");
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    printf("여기\n");
+                    ItemReady = TRUE;
                 }
-                printf("Send %d번 게임 시작 신호 보냄\n", client_ID[Thread_idx]);
-                SetEvent(hRecvEvent);
-                GameState = InGame;
+                if (ItemReady)
+                {
+                    m_PF.InitPacket(&Send_P);
+                    Send_P.type = start;
+                    LeaveCriticalSection(&cs);
+                    retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
+                    if (retval == SOCKET_ERROR) {
+                        m_SF.err_display("send()");
+                        break;
+                    }
+                    printf("Send %d번 게임 시작 신호 보냄\n", client_ID[Thread_idx]);
+                    SetEvent(hRecvEvent);
+                    GameState = InGame;
+                }
             }
         }
         if (GameState == InGame)

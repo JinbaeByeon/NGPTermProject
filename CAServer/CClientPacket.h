@@ -80,4 +80,13 @@ public:
 
 	void InitPlayer(CMap m_Map, InputPacket* Send_P, int idx);
 	void InitPacket(InputPacket* P);
+	void InitItem(ItemPacket* P, CMap m_Map);
+};
+
+enum Item { 
+	Ball = 1, 
+	OnePower = 6, 
+	Speed = 11, 
+	MaxPower = 16, 
+	RedDevil = 21 
 };
