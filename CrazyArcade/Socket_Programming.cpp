@@ -26,6 +26,8 @@ extern int yPos_Player[4];
 extern BOOL Player_Bubble[4][7];
 extern RECT Tile_Bubble[4][7];
 extern int Power[4];
+extern int Itemset[2][13][15];
+
 
 
 extern enum Player_Position { LEFT = 3, RIGHT = 2, UP = 0, DOWN = 1 };
@@ -139,6 +141,10 @@ DWORD WINAPI RecvClient(LPVOID arg)
                 if (Recv_Player_Packet->idx_player + 1 > nPlayer) {
                     Player_Live[nPlayer++] = TRUE;
                 }
+            }
+            else if (Recv_Player_Packet->type == item)
+            {
+                Itemset[0][Recv_Player_Packet->x][Recv_Player_Packet->y] = Recv_Player_Packet->idx_player;
             }
         }
         else if (GameState == INGAME)

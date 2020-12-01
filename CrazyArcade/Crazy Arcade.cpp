@@ -1776,14 +1776,14 @@ void SetPos()
 		}
 
 	srand((unsigned)time(NULL));
-	// ∏ 1 æ∆¿Ã≈€
-	for (int i = 0; i < Tile_CountY; i++)
-		for (int j = 0; j < Tile_CountX; j++) {
-			ItemValue = rand() % 30;
-			if (ItemValue != 0 && ItemValue != 7 && isBox[0][i][j]) {
-				Itemset[0][i][j] = ItemValue;
-			}
-		}
+	//// ∏ 1 æ∆¿Ã≈€
+	//for (int i = 0; i < Tile_CountY; i++)
+	//	for (int j = 0; j < Tile_CountX; j++) {
+	//		ItemValue = rand() % 30;
+	//		if (ItemValue != 0 && ItemValue != 7 && isBox[0][i][j]) {
+	//			Itemset[0][i][j] = ItemValue;
+	//		}
+	//	}
 
 	// ∏ 2 æ∆¿Ã≈€
 	for (int i = 0; i < Tile_CountY; i++)
