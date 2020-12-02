@@ -93,7 +93,7 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                     if (Thread_Count != i)
                         ResetEvent(hSendEvent[i]);*/
 
-                for (int i = 0; i < MAX_CLIENT; i++)
+                /*for (int i = 0; i < Accept_count; i++)
                 {
                     if (i != Thread_idx)
                     {
@@ -103,10 +103,10 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                             m_SF.err_display("send()");
                             break;
                         }
-                        printf("Send %d번에게 %d번 클라이언트의 위치 전송 : %d %d\n",
+                        printf("Send %d번에게 %d번 클라이언트의 위치 전숑 : %d %d\n",
                             client_ID[Thread_idx], Send_P.idx_player + 1, Send_P.x, Send_P.y);
                     }
-                }
+                }*/
 
                 LeaveCriticalSection(&cs);
 
