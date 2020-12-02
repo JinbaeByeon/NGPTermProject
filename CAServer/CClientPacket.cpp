@@ -10,10 +10,13 @@ void PacketFunc::InitPlayer(CMap m_Map, InputPacket *Send_P, int idx)
         Send_P->x = m_Map.Tile[0][0].left, Send_P->y = m_Map.Tile[0][0].top
         , Send_P->status = 0;
     else if (idx == 1)
-        Send_P->x = m_Map.Tile[12][13].left, Send_P->y = m_Map.Tile[12][13].top
+        Send_P->x = m_Map.Tile[12][1].left, Send_P->y = m_Map.Tile[12][1].top
         , Send_P->status = 0;
     else if (idx == 2)
-        Send_P->x = m_Map.Tile[0][0].left, Send_P->y = m_Map.Tile[0][0].top
+        Send_P->x = m_Map.Tile[1][13].left, Send_P->y = m_Map.Tile[1][13].top
+        , Send_P->status = 0;
+    else if (idx == 3)
+        Send_P->x = m_Map.Tile[12][13].left, Send_P->y = m_Map.Tile[12][13].top
         , Send_P->status = 0;
 }
 
