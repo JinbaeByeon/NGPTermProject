@@ -19,7 +19,7 @@ HANDLE hRecvEvent;
 InputPacket Send_P;
 InputPacket Recv_P;
 InputPacket Player_P[3]; // 플레이어 초기 정보
-ItemPacket Item_P;
+InputPacket Item_P;
 
 CMap m_Map;
 
@@ -144,7 +144,8 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                                 if (ItemValue != 0 && ItemValue != 7 && m_Map.isBox[0][i][j]) {
                                     Item_P.x = i;
                                     Item_P.y = j;
-                                    Item_P.type = ItemValue;
+                                    Item_P.idx_player= ItemValue;
+                                    Item_P.type = item;
                                     retval = send(client_sock, (char*)&Item_P, sizeof(Item_P), 0);
                                     if (retval == SOCKET_ERROR) {
                                         m_SF.err_display("send()");
@@ -188,7 +189,8 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                                 if (ItemValue != 0 && ItemValue != 7 && m_Map.isBox[0][i][j]) {
                                     Item_P.x = i;
                                     Item_P.y = j;
-                                    Item_P.type = ItemValue;
+                                    Item_P.idx_player = ItemValue;
+                                    Item_P.type = item;
                                     retval = send(client_sock, (char*)&Item_P, sizeof(Item_P), 0);
                                     if (retval == SOCKET_ERROR) {
                                         m_SF.err_display("send()");
