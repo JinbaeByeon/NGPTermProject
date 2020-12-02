@@ -809,15 +809,15 @@ void Animation()
 
 
 					for (int j = 0; j <= Power[k]; ++j) {   // À§
-
-						if (Collision(Player[Client_Idx], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].top - 40 * j) ||
-							Collision(Player[Client_Idx], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].top - 40 * j + 20)) {
-							WaitForSingleObject(hSendEvent, INFINITE);
-							Send_Client_Packet = new InputPacket(Client_Idx, Player[Client_Idx].left, Player[Client_Idx].top, Status::IN_BUBBLE);
-							Send_Client_Packet->type = PacketType::player;
-							SetEvent(hInputEvent);
+						if (!bDie[Client_Idx] && !bInBubble[Client_Idx]) {
+							if (Collision(Player[Client_Idx], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].top - 40 * j) ||
+								Collision(Player[Client_Idx], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].top - 40 * j + 20)) {
+								WaitForSingleObject(hSendEvent, INFINITE);
+								Send_Client_Packet = new InputPacket(Client_Idx, Player[Client_Idx].left, Player[Client_Idx].top, Status::IN_BUBBLE);
+								Send_Client_Packet->type = PacketType::player;
+								SetEvent(hInputEvent);
+							}
 						}
-
 						if (j == Power[k] || !Tile_Enable_Move[Sel_Map][a - j - 1][b] || Tile_Bubble[k][i].top - 40 * j == Tile[0][0].top || isBox[Sel_Map][a - j][b]) {
 							TransparentBlt(mem1dc, Tile_Bubble[k][i].left, Tile_Bubble[k][i].top - 40 * j, 40, 40, mem2dc, 40 * MoveResource[k][i], 40, 40, 40, RGB(0, 255, 0));
 							if (isBox[Sel_Map][a - j][b])
@@ -827,14 +827,15 @@ void Animation()
 						TransparentBlt(mem1dc, Tile_Bubble[k][i].left, Tile_Bubble[k][i].top - (40 * j), 40, 40, mem2dc, 40 * MoveResource[k][i], 200, 40, 40, RGB(0, 255, 0));
 					}
 					for (int j = 0; j <= Power[k]; ++j) {   // ¾Æ·¡
-						if (Collision(Player[Client_Idx], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].bottom + 40 * j) ||
-							Collision(Player[Client_Idx], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].bottom + 40 * j - 20)) {
-							WaitForSingleObject(hSendEvent, INFINITE);
-							Send_Client_Packet = new InputPacket(Client_Idx, Player[Client_Idx].left, Player[Client_Idx].top, Status::IN_BUBBLE);
-							Send_Client_Packet->type = PacketType::player;
-							SetEvent(hInputEvent);
+						if (!bDie[Client_Idx] && !bInBubble[Client_Idx]) {
+							if (Collision(Player[Client_Idx], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].bottom + 40 * j) ||
+								Collision(Player[Client_Idx], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].bottom + 40 * j - 20)) {
+								WaitForSingleObject(hSendEvent, INFINITE);
+								Send_Client_Packet = new InputPacket(Client_Idx, Player[Client_Idx].left, Player[Client_Idx].top, Status::IN_BUBBLE);
+								Send_Client_Packet->type = PacketType::player;
+								SetEvent(hInputEvent);
+							}
 						}
-
 
 						if (j == Power[k] || !Tile_Enable_Move[Sel_Map][a + j + 1][b] || Tile_Bubble[k][i].bottom + 40 * j == Tile[12][14].bottom || isBox[Sel_Map][a + j][b]) {
 							TransparentBlt(mem1dc, Tile_Bubble[k][i].left, Tile_Bubble[k][i].top + 40 * j, 40, 40, mem2dc, 40 * MoveResource[k][i], 80, 40, 40, RGB(0, 255, 0));
@@ -845,14 +846,15 @@ void Animation()
 						TransparentBlt(mem1dc, Tile_Bubble[k][i].left, Tile_Bubble[k][i].top + (40 * j), 40, 40, mem2dc, 40 * MoveResource[k][i], 240, 40, 40, RGB(0, 255, 0));
 					}
 					for (int j = 0; j <= Power[k]; ++j) {   // ¿À¸¥ÂÊ
-						if (Collision(Player[Client_Idx], Tile_Bubble[k][i].right + 40 * j, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2) ||
-							Collision(Player[Client_Idx], Tile_Bubble[k][i].right + 40 * j - 20, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2)) {
-							WaitForSingleObject(hSendEvent, INFINITE);
-							Send_Client_Packet = new InputPacket(Client_Idx, Player[Client_Idx].left, Player[Client_Idx].top, Status::IN_BUBBLE);
-							Send_Client_Packet->type = PacketType::player;
-							SetEvent(hInputEvent);
+						if (!bDie[Client_Idx] && !bInBubble[Client_Idx]) {
+							if (Collision(Player[Client_Idx], Tile_Bubble[k][i].right + 40 * j, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2) ||
+								Collision(Player[Client_Idx], Tile_Bubble[k][i].right + 40 * j - 20, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2)) {
+								WaitForSingleObject(hSendEvent, INFINITE);
+								Send_Client_Packet = new InputPacket(Client_Idx, Player[Client_Idx].left, Player[Client_Idx].top, Status::IN_BUBBLE);
+								Send_Client_Packet->type = PacketType::player;
+								SetEvent(hInputEvent);
+							}
 						}
-
 						if (j == Power[k] || !Tile_Enable_Move[Sel_Map][a][b + j + 1] || Tile_Bubble[k][i].right + 40 * j == Tile[12][14].right || isBox[Sel_Map][a][b + j]) {
 							TransparentBlt(mem1dc, Tile_Bubble[k][i].left + 40 * j, Tile_Bubble[k][i].top, 40, 40, mem2dc, 40 * MoveResource[k][i], 120, 40, 40, RGB(0, 255, 0));
 							if (isBox[Sel_Map][a][b + j])
@@ -862,14 +864,15 @@ void Animation()
 						TransparentBlt(mem1dc, Tile_Bubble[k][i].left + (40 * j), Tile_Bubble[k][i].top, 40, 40, mem2dc, 40 * MoveResource[k][i], 280, 40, 40, RGB(0, 255, 0));
 					}
 					for (int j = 0; j <= Power[k]; ++j) {   // ¿ÞÂÊ
-						if (Collision(Player[Client_Idx], Tile_Bubble[k][i].left - 40 * j, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2) ||
-							Collision(Player[Client_Idx], Tile_Bubble[k][i].left - 40 * j + 20, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2)) {
-							WaitForSingleObject(hSendEvent, INFINITE);
-							Send_Client_Packet = new InputPacket(Client_Idx, Player[Client_Idx].left, Player[Client_Idx].top, Status::IN_BUBBLE);
-							Send_Client_Packet->type = PacketType::player;
-							SetEvent(hInputEvent);
+						if (!bDie[Client_Idx] && !bInBubble[Client_Idx]) {
+							if (Collision(Player[Client_Idx], Tile_Bubble[k][i].left - 40 * j, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2) ||
+								Collision(Player[Client_Idx], Tile_Bubble[k][i].left - 40 * j + 20, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2)) {
+								WaitForSingleObject(hSendEvent, INFINITE);
+								Send_Client_Packet = new InputPacket(Client_Idx, Player[Client_Idx].left, Player[Client_Idx].top, Status::IN_BUBBLE);
+								Send_Client_Packet->type = PacketType::player;
+								SetEvent(hInputEvent);
+							}
 						}
-
 						if (j == Power[k] || !Tile_Enable_Move[Sel_Map][a][b - j - 1] || Tile_Bubble[k][i].left - 40 * j == Tile[0][0].left || isBox[Sel_Map][a][b - j]) {
 							TransparentBlt(mem1dc, Tile_Bubble[k][i].left - 40 * j, Tile_Bubble[k][i].top, 40, 40, mem2dc, 40 * MoveResource[k][i], 160, 40, 40, RGB(0, 255, 0));
 							if (isBox[Sel_Map][a][b - j])
@@ -880,15 +883,15 @@ void Animation()
 					}
 					TransparentBlt(mem1dc, Tile_Bubble[k][i].left, Tile_Bubble[k][i].top, 40, 40, mem2dc, 40 * MoveResource[k][i], 0, 40, 40, RGB(0, 255, 0));   // Áß¾Ó
 
-					if (InBubble_Collision(Player[Client_Idx], Tile_Bubble[k][i].top, Tile_Bubble[k][i].left, Tile_Bubble[k][i].bottom, Tile_Bubble[k][i].right))
-					{
-						WaitForSingleObject(hSendEvent, INFINITE);
-						Send_Client_Packet = new InputPacket(Client_Idx, Player[Client_Idx].left, Player[Client_Idx].top, Status::IN_BUBBLE);
-						Send_Client_Packet->type = PacketType::player;
-						SetEvent(hInputEvent);						
-						SelectObject(mem2dc, Player_Bit[k]);
-						TransparentBlt(mem1dc, Player[Client_Idx].left - xGap_Char, Player[Client_Idx].bottom - Char_CY, Char_CX, Char_CY, mem2dc, 0, 280, Char_CX, Char_CY, TPColor);
-					}
+					//if (InBubble_Collision(Player[Client_Idx], Tile_Bubble[k][i].top, Tile_Bubble[k][i].left, Tile_Bubble[k][i].bottom, Tile_Bubble[k][i].right))
+					//{
+					//	WaitForSingleObject(hSendEvent, INFINITE);
+					//	Send_Client_Packet = new InputPacket(Client_Idx, Player[Client_Idx].left, Player[Client_Idx].top, Status::IN_BUBBLE);
+					//	Send_Client_Packet->type = PacketType::player;
+					//	SetEvent(hInputEvent);						
+					//	SelectObject(mem2dc, Player_Bit[k]);
+					//	TransparentBlt(mem1dc, Player[Client_Idx].left - xGap_Char, Player[Client_Idx].bottom - Char_CY, Char_CX, Char_CY, mem2dc, 0, 280, Char_CX, Char_CY, TPColor);
+					//}
 					////////////////////////////¹°ÁÙ±â¿¡ ´êÀ¸¸é Á×À½ ¤Ð
 				}
 			}
@@ -1548,6 +1551,7 @@ void KEY_DOWN_P1(HWND hWnd)
 										Send_Client_Packet->type = PacketType::bubble;
 									}
 									SetEvent(hInputEvent);
+									WaitForSingleObject(hBubbleEvent,INFINITE);
 									return;
 								}
 							}
