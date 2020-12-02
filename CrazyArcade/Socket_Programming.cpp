@@ -27,11 +27,18 @@ extern BOOL Player_Bubble[4][7];
 extern RECT Tile_Bubble[4][7];
 extern int Power[4];
 extern int Itemset[2][13][15];
+extern BOOL bInBubble[4];
+extern int Player_bCount[4]; 
+extern int Player_Speed[4];
+
 
 
 
 extern enum Player_Position { LEFT = 3, RIGHT = 2, UP = 0, DOWN = 1 };
 extern enum GAME_BG { MENU = 1, ROBBY, INGAME };
+extern enum Item { Ball = 1, OnePower = 6, Speed = 11, MaxPower = 16, RedDevil = 21 };
+extern enum Timer { P1 = 0, P2 = 1, P3 = 2, P4 = 3, Bubble_BfBoom, Bubble_Flow, In_Bubble, Die, Monster_Move, Recv_Bubble };
+
 extern int Sel_Map;
 
 extern BOOL TextOn; 
@@ -42,6 +49,8 @@ extern BOOL Player_Live[MAX_PLAYER];
 extern BOOL Player_Move[MAX_PLAYER];
 
 extern void CALLBACK TimeProc_Text(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
+extern void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
+extern void CALLBACK TimeProc_InBubble(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 
 
 int recvn(SOCKET s, char* buf, int len, int flags)
@@ -121,7 +130,7 @@ DWORD WINAPI RecvClient(LPVOID arg)
             buf[retval] = '\0';
             Recv_Player_Packet = (InputPacket*)buf;
             printf("Packet ID : %d\nPacket x : %d\nPacket y : %d\nPacket type : %d\n", Recv_Player_Packet->idx_player, Recv_Player_Packet->x, Recv_Player_Packet->y, Recv_Player_Packet->type);
-            if (Recv_Player_Packet->type == start)
+            if (Recv_Player_Packet->type == PacketType::start)
             {
                 printf("시작하랍신다~\n");
                 // 게임 스타트 (GameState 3으로 바꾸고 사운드랑 불값 체인지 필요
@@ -136,13 +145,13 @@ DWORD WINAPI RecvClient(LPVOID arg)
                 else
                     Sel_Map = 1;
             }
-            else if (Recv_Player_Packet->type == player)
+            else if (Recv_Player_Packet->type == PacketType::player)
             {
                 if (Recv_Player_Packet->idx_player + 1 > nPlayer) {
                     Player_Live[nPlayer++] = TRUE;
                 }
             }
-            else if (Recv_Player_Packet->type == item)
+            else if (Recv_Player_Packet->type == PacketType::item)
             {
                 Itemset[0][Recv_Player_Packet->x][Recv_Player_Packet->y] = Recv_Player_Packet->idx_player;
             }
@@ -158,31 +167,30 @@ DWORD WINAPI RecvClient(LPVOID arg)
             if (Recv_Player_Packet->type == PacketType:: player)
             {
                 printf("플레이어 패킷 수신 -> type : %d, idx : %d, x : %d, y : %d, status : %d\n\n", Recv_Player_Packet->type, Recv_Player_Packet->idx_player, Recv_Player_Packet->x, Recv_Player_Packet->y, Recv_Player_Packet->status);
-                Player[Recv_Player_Packet->idx_player].left = Recv_Player_Packet->x;
-                Player[Recv_Player_Packet->idx_player].right = Player[Client_Idx].left + Player_CX;
-                Player[Recv_Player_Packet->idx_player].top = Recv_Player_Packet->y;
-                Player[Recv_Player_Packet->idx_player].bottom = Recv_Player_Packet->y + Player_CY;
-                if (Recv_Player_Packet->status == STOP)
-                {
-                    xPos_Player[Recv_Player_Packet->idx_player] = 0;
-                    Player_Move[Recv_Player_Packet->idx_player] = FALSE;
+                if (Recv_Player_Packet->status ==Status::IN_BUBBLE) {
+                    Player_Speed[Recv_Player_Packet->idx_player] = 100;
+                    SetTimer(hwnd, Timer::In_Bubble, Player_Speed[Recv_Player_Packet->idx_player], (TIMERPROC)TimeProc_InBubble);
+                    bInBubble[Recv_Player_Packet->idx_player] = TRUE;
                 }
-                else if (yPos_Player[Recv_Player_Packet->idx_player] != Recv_Player_Packet->status)
-                {
-                    yPos_Player[Recv_Player_Packet->idx_player] = Recv_Player_Packet->status;
-                    xPos_Player[Recv_Player_Packet->idx_player] = 0;
-                    Player_Move[Recv_Player_Packet->idx_player] = TRUE;
+                else {
+                    Player[Recv_Player_Packet->idx_player].left = Recv_Player_Packet->x;
+                    Player[Recv_Player_Packet->idx_player].right = Player[Client_Idx].left + Player_CX;
+                    Player[Recv_Player_Packet->idx_player].top = Recv_Player_Packet->y;
+                    Player[Recv_Player_Packet->idx_player].bottom = Recv_Player_Packet->y + Player_CY;
+                    if (Recv_Player_Packet->status == Status::STOP)
+                    {
+                        xPos_Player[Recv_Player_Packet->idx_player] = 0;
+                        Player_Move[Recv_Player_Packet->idx_player] = FALSE;
+                    }
+                    else if (yPos_Player[Recv_Player_Packet->idx_player] != Recv_Player_Packet->status)
+                    {
+                        yPos_Player[Recv_Player_Packet->idx_player] = Recv_Player_Packet->status;
+                        xPos_Player[Recv_Player_Packet->idx_player] = 0;
+                        Player_Move[Recv_Player_Packet->idx_player] = TRUE;
+                    }                    
                 }
-                /*else
-                {
-                    ++xPos_Player[Recv_Player_Packet->idx_player] %= 4;
-                }*/
-                // 데이터 받은거 처리 부분 구현 필요
-                // Rect[Recv_Player_Packet->index] 에 대해 x,y, 상태를 반영
-                // 이 때, 에니매이션 구현을 통해 Rect[]에 값을 저장하기 전에 이동 방향, 상태에 대한 변화를 파악
-                // Rect[Recv_Player_Packet->index].x > Recv_Player_Packet->x 이면 오른쪽으로 이동, 오른쪽 애니메이션
             }
-            else if (Recv_Player_Packet->type == bubble)
+            else if (Recv_Player_Packet->type == PacketType::bubble)
             {
                 printf("버블 패킷 수신 -> type : %d x : %d y : %d\n\n", Recv_Player_Packet->type, Recv_Player_Packet->x, Recv_Player_Packet->y);
                 for (int i = 0; i < 7; i++)
@@ -205,9 +213,42 @@ DWORD WINAPI RecvClient(LPVOID arg)
                 // 데이터 받은거 처리 부분 구현 필요
                 // 지금은 버블 생성하고 패킷 보내는 형식으로 진행되는데 이걸 보낸 뒤에 버블 패킷 받고 생성하는걸로 수정 필요
             }
-            else if (Recv_Player_Packet->type == item)
+            else if (Recv_Player_Packet->type == PacketType::item)
             {
-                // item에 대한 처리
+                if (Itemset[Sel_Map][Recv_Player_Packet->x][Recv_Player_Packet->y] == Ball) {
+                    CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
+                    if (Player_bCount[Recv_Player_Packet->idx_player] < 7)
+                        Player_bCount[Recv_Player_Packet->idx_player]++;
+                }
+                if (Itemset[Sel_Map][Recv_Player_Packet->x][Recv_Player_Packet->y] == OnePower) {
+                    CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
+                    if (Power[Recv_Player_Packet->idx_player] < 7)
+                        Power[Recv_Player_Packet->idx_player]++;
+                }
+                if (Itemset[Sel_Map][Recv_Player_Packet->x][Recv_Player_Packet->y] == Speed) {
+                    CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
+                    if (Player_Speed[Recv_Player_Packet->idx_player] >= 20)
+                        Player_Speed[Recv_Player_Packet->idx_player] -= 5;
+                    if (Recv_Player_Packet->idx_player == Client_Idx) {
+                        KillTimer(hwnd, P1);
+                        SetTimer(hwnd, P1, Player_Speed[Client_Idx], (TIMERPROC)TimeProc_P1_Move);
+                    }
+                }
+                if (Itemset[Sel_Map][Recv_Player_Packet->x][Recv_Player_Packet->y] == MaxPower) {
+                    CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
+                    Power[Recv_Player_Packet->idx_player] = 7;
+                }
+                if (Itemset[Sel_Map][Recv_Player_Packet->x][Recv_Player_Packet->y] == RedDevil) {
+                    CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
+                    Player_Speed[Recv_Player_Packet->idx_player] = 15;
+                    if (Recv_Player_Packet->idx_player == Client_Idx) {
+                        KillTimer(hwnd, P1);
+                        SetTimer(hwnd, P1, Player_Speed[Client_Idx], (TIMERPROC)TimeProc_P1_Move);
+                    }
+                    Player_bCount[Recv_Player_Packet->idx_player] = 7;
+                    Power[Recv_Player_Packet->idx_player] = 7;
+                }
+                Itemset[Sel_Map][Recv_Player_Packet->x][Recv_Player_Packet->y] = 0;
             }
         }
     }

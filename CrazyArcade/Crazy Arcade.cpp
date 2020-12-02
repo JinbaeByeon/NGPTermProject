@@ -810,11 +810,12 @@ void Animation()
 
 					for (int j = 0; j <= Power[k]; ++j) {   // À§
 
-						if (Collision(Player[k], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].top - 40 * j) ||
-							Collision(Player[k], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].top - 40 * j + 20)) {
-							Player_Speed[k] = 100;
-							SetTimer(hwnd, In_Bubble, Player_Speed[k], (TIMERPROC)TimeProc_InBubble);
-							bInBubble[k] = TRUE;
+						if (Collision(Player[Client_Idx], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].top - 40 * j) ||
+							Collision(Player[Client_Idx], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].top - 40 * j + 20)) {
+							WaitForSingleObject(hSendEvent, INFINITE);
+							Send_Client_Packet = new InputPacket(Client_Idx, Player[Client_Idx].left, Player[Client_Idx].top, Status::IN_BUBBLE);
+							Send_Client_Packet->type = PacketType::player;
+							SetEvent(hInputEvent);
 						}
 
 						if (j == Power[k] || !Tile_Enable_Move[Sel_Map][a - j - 1][b] || Tile_Bubble[k][i].top - 40 * j == Tile[0][0].top || isBox[Sel_Map][a - j][b]) {
@@ -826,11 +827,12 @@ void Animation()
 						TransparentBlt(mem1dc, Tile_Bubble[k][i].left, Tile_Bubble[k][i].top - (40 * j), 40, 40, mem2dc, 40 * MoveResource[k][i], 200, 40, 40, RGB(0, 255, 0));
 					}
 					for (int j = 0; j <= Power[k]; ++j) {   // ¾Æ·¡
-						if (Collision(Player[k], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].bottom + 40 * j) ||
-							Collision(Player[k], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].bottom + 40 * j - 20)) {
-							Player_Speed[k] = 100;
-							SetTimer(hwnd, In_Bubble, Player_Speed[k], (TIMERPROC)TimeProc_InBubble);
-							bInBubble[k] = TRUE;
+						if (Collision(Player[Client_Idx], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].bottom + 40 * j) ||
+							Collision(Player[Client_Idx], (Tile_Bubble[k][i].left + Tile_Bubble[k][i].right) / 2, Tile_Bubble[k][i].bottom + 40 * j - 20)) {
+							WaitForSingleObject(hSendEvent, INFINITE);
+							Send_Client_Packet = new InputPacket(Client_Idx, Player[Client_Idx].left, Player[Client_Idx].top, Status::IN_BUBBLE);
+							Send_Client_Packet->type = PacketType::player;
+							SetEvent(hInputEvent);
 						}
 
 
@@ -843,11 +845,12 @@ void Animation()
 						TransparentBlt(mem1dc, Tile_Bubble[k][i].left, Tile_Bubble[k][i].top + (40 * j), 40, 40, mem2dc, 40 * MoveResource[k][i], 240, 40, 40, RGB(0, 255, 0));
 					}
 					for (int j = 0; j <= Power[k]; ++j) {   // ¿À¸¥ÂÊ
-						if (Collision(Player[k], Tile_Bubble[k][i].right + 40 * j, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2) ||
-							Collision(Player[k], Tile_Bubble[k][i].right + 40 * j - 20, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2)) {
-							Player_Speed[k] = 100;
-							SetTimer(hwnd, In_Bubble, Player_Speed[k], (TIMERPROC)TimeProc_InBubble);
-							bInBubble[k] = TRUE;
+						if (Collision(Player[Client_Idx], Tile_Bubble[k][i].right + 40 * j, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2) ||
+							Collision(Player[Client_Idx], Tile_Bubble[k][i].right + 40 * j - 20, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2)) {
+							WaitForSingleObject(hSendEvent, INFINITE);
+							Send_Client_Packet = new InputPacket(Client_Idx, Player[Client_Idx].left, Player[Client_Idx].top, Status::IN_BUBBLE);
+							Send_Client_Packet->type = PacketType::player;
+							SetEvent(hInputEvent);
 						}
 
 						if (j == Power[k] || !Tile_Enable_Move[Sel_Map][a][b + j + 1] || Tile_Bubble[k][i].right + 40 * j == Tile[12][14].right || isBox[Sel_Map][a][b + j]) {
@@ -859,11 +862,12 @@ void Animation()
 						TransparentBlt(mem1dc, Tile_Bubble[k][i].left + (40 * j), Tile_Bubble[k][i].top, 40, 40, mem2dc, 40 * MoveResource[k][i], 280, 40, 40, RGB(0, 255, 0));
 					}
 					for (int j = 0; j <= Power[k]; ++j) {   // ¿ÞÂÊ
-						if (Collision(Player[k], Tile_Bubble[k][i].left - 40 * j, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2) ||
-							Collision(Player[k], Tile_Bubble[k][i].left - 40 * j + 20, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2)) {
-							Player_Speed[k] = 100;
-							SetTimer(hwnd, In_Bubble, Player_Speed[k], (TIMERPROC)TimeProc_InBubble);
-							bInBubble[k] = TRUE;
+						if (Collision(Player[Client_Idx], Tile_Bubble[k][i].left - 40 * j, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2) ||
+							Collision(Player[Client_Idx], Tile_Bubble[k][i].left - 40 * j + 20, (Tile_Bubble[k][i].top + Tile_Bubble[k][i].bottom) / 2)) {
+							WaitForSingleObject(hSendEvent, INFINITE);
+							Send_Client_Packet = new InputPacket(Client_Idx, Player[Client_Idx].left, Player[Client_Idx].top, Status::IN_BUBBLE);
+							Send_Client_Packet->type = PacketType::player;
+							SetEvent(hInputEvent);
 						}
 
 						if (j == Power[k] || !Tile_Enable_Move[Sel_Map][a][b - j - 1] || Tile_Bubble[k][i].left - 40 * j == Tile[0][0].left || isBox[Sel_Map][a][b - j]) {
@@ -876,21 +880,17 @@ void Animation()
 					}
 					TransparentBlt(mem1dc, Tile_Bubble[k][i].left, Tile_Bubble[k][i].top, 40, 40, mem2dc, 40 * MoveResource[k][i], 0, 40, 40, RGB(0, 255, 0));   // Áß¾Ó
 
-					if (InBubble_Collision(Player[k], Tile_Bubble[k][i].top, Tile_Bubble[k][i].left, Tile_Bubble[k][i].bottom, Tile_Bubble[k][i].right))
+					if (InBubble_Collision(Player[Client_Idx], Tile_Bubble[k][i].top, Tile_Bubble[k][i].left, Tile_Bubble[k][i].bottom, Tile_Bubble[k][i].right))
 					{
-						SetTimer(hwnd, In_Bubble, Player_Speed[k], (TIMERPROC)TimeProc_InBubble);
-						Player_Speed[k] = 100;
+						WaitForSingleObject(hSendEvent, INFINITE);
+						Send_Client_Packet = new InputPacket(Client_Idx, Player[Client_Idx].left, Player[Client_Idx].top, Status::IN_BUBBLE);
+						Send_Client_Packet->type = PacketType::player;
+						SetEvent(hInputEvent);						
 						SelectObject(mem2dc, Player_Bit[k]);
-						TransparentBlt(mem1dc, Player[k].left - xGap_Char, Player[k].bottom - Char_CY, Char_CX, Char_CY, mem2dc, 0, 280, Char_CX, Char_CY, TPColor);
+						TransparentBlt(mem1dc, Player[Client_Idx].left - xGap_Char, Player[Client_Idx].bottom - Char_CY, Char_CX, Char_CY, mem2dc, 0, 280, Char_CX, Char_CY, TPColor);
 					}
-
-
-
 					////////////////////////////¹°ÁÙ±â¿¡ ´êÀ¸¸é Á×À½ ¤Ð
 				}
-
-
-
 			}
 
 
@@ -899,47 +899,12 @@ void Animation()
 		for (int i = 0; i < Tile_CountY; i++)
 			for (int j = 0; j < Tile_CountX; j++) {
 				if (Itemset[Sel_Map][i][j] != 0 && Itemset[Sel_Map][i][j] != 7) {
-					for (int k = 0; k < nPlayer; ++k) {
-						if (IntersectRect(&Temp, &Player[k], &Tile[i][j])) {
-							if (Itemset[Sel_Map][i][j] == Ball) {
-								CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
-								if (Player_bCount[k] < 7)
-									Player_bCount[k]++;
-							}
-							if (Itemset[Sel_Map][i][j] == OnePower) {
-								CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
-								if (Power[k] < 7)
-									Power[k]++;
-							}
-							if (Itemset[Sel_Map][i][j] == Speed) {
-								CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
-								if (Player_Speed[k] >= 20)
-									Player_Speed[k] -= 5;
-								if (k == Client_Idx) {
-									KillTimer(hwnd, P1);
-									SetTimer(hwnd, P1, Player_Speed[k], (TIMERPROC)TimeProc_P1_Move);
-								}
-							}
-
-							if (Itemset[Sel_Map][i][j] == MaxPower) {
-								CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
-								Power[k] = 7;
-							}
-							if (Itemset[Sel_Map][i][j] == RedDevil) {
-								CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
-								Player_Speed[k] = 15;
-								if (k == Client_Idx) {
-									KillTimer(hwnd, P1);
-									SetTimer(hwnd, P1, Player_Speed[k], (TIMERPROC)TimeProc_P1_Move);
-								}
-								Player_bCount[k] = 7;
-								Power[k] = 7;
-							}
-							Itemset[Sel_Map][i][j] = 0;
-						}
-
+					if (IntersectRect(&Temp, &Player[Client_Idx], &Tile[i][j])) {
+						WaitForSingleObject(hSendEvent, INFINITE);
+						Send_Client_Packet = new InputPacket(Client_Idx, i, j);
+						Send_Client_Packet->type = item;
+						SetEvent(hInputEvent);
 					}
-
 					/*if (IntersectRect(&Temp, &Player1, &Tile[i][j])) {
 						if (Itemset[Sel_Map][i][j] == Ball) {
 							CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Item_Off.ogg");
