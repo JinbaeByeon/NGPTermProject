@@ -19,6 +19,7 @@ enum PacketType
 	item,
 	bubble,
 	ready,
+	end,
 };
 
 struct InputPacket : public Packet
@@ -89,4 +90,14 @@ enum Item {
 	Speed = 11, 
 	MaxPower = 16, 
 	RedDevil = 21 
+};
+
+enum Status {
+	MOVE_LEFT = 3,
+	MOVE_RIGHT = 2,
+	MOVE_UP = 0,
+	MOVE_DOWN = 1,
+	STOP = 4,
+	IN_BUBBLE = 5,
+	DEAD = 6
 };

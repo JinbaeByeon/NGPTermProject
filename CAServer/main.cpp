@@ -4,21 +4,22 @@
 #include "CClientPacket.h"
 
 
-int client_ID[3] = { 1, 2, 3 };
-BOOL ThreadOn[3] = { FALSE }; // 스레드 생성 확인
-BOOL InRobby[3] = { FALSE }; // 로비 접속 확인
-BOOL Ready[3] = { FALSE }; // 게임 시작 준비 확인
-BOOL ItemReady[3] = { FALSE };  // 아이템 초기화 확인
-
+int client_ID[4] = { 1, 2, 3, 4 };
+BOOL ThreadOn[4] = { FALSE, }; // 스레드 생성 확인
+BOOL InRobby[4] = { FALSE, }; // 로비 접속 확인
+BOOL Ready[4] = { TRUE, TRUE, TRUE, TRUE }; // 게임 시작 준비 확인
+BOOL ItemReady[4] = { TRUE,TRUE,TRUE, TRUE };  // 아이템 초기화 확인
+BOOL Game_Over[4] = { TRUE, TRUE, TRUE, TRUE }; // 각 스레드 게임 오버 처리 확인
+ 
 int Thread_Count = -1; // send+recv스레드 쌍 갯수
 
-HANDLE hSendEvent[3];  // 스레드별 send이벤트
+HANDLE hSendEvent[4];  // 스레드별 send이벤트
 HANDLE hRecvEvent;
 
 
 InputPacket Send_P;
 InputPacket Recv_P;
-InputPacket Player_P[3]; // 플레이어 초기 정보
+InputPacket Player_P[4]; // 플레이어 초기 정보
 InputPacket Item_P;
 
 CMap m_Map;
@@ -41,6 +42,7 @@ void InitGame()
     {
         Ready[i] = FALSE;
         ItemReady[i] = FALSE;
+        Game_Over[i] = FALSE;
         m_PF.InitPacket(&Send_P);
         m_PF.InitPacket(&Recv_P);
     }
@@ -57,6 +59,9 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
     int len;
 
     int Thread_idx = Thread_Count; // 0, 1, 2
+    Ready[Thread_idx] = FALSE;
+    ItemReady[Thread_idx] = FALSE;
+    Game_Over[Thread_idx] = FALSE;
 
     int startsign = 0;
 
@@ -72,6 +77,7 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
     while (1) {
         if (GameState == Robby)
         {
+            // 접속 후 초기 데이터 전송
             if (!InRobby[Thread_idx])
             {
                 Accept_count++;
@@ -85,7 +91,7 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                     m_SF.err_display("send()");
                     break;
                 }
-                printf("[TCP 서버] %d번 클라이언트 위치 전송 : %d %d %d\n",
+                printf("[TCP 서버] %d번 클라이언트 초기 데이터 전송 : %d %d %d\n",
                     client_ID[Thread_idx], Player_P[Thread_idx].x
                     , Player_P[Thread_idx].y, Player_P[Thread_idx].type);
                 InRobby[Thread_idx] = TRUE;
@@ -113,6 +119,7 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
 
             }
 
+            // 다른 클라이언트에게 자신의 데이터 전송
             if (Accept_count - Thread_Count < 1) {
                 if (ThreadOn[Thread_Count] && !InRobby[Thread_Count])
                 {
@@ -129,94 +136,47 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                 }
             }
 
-            if (Thread_Count == 1)
+            // 게임 시작 판단
+            if (Ready[0] && Ready[1] && Ready[2] && Ready[3])
             {
-                if (Ready[0] && Ready[1])
+                if (!ItemReady[Thread_idx])
                 {
-                    if (!ItemReady[Thread_idx])
+                    EnterCriticalSection(&cs);
+                    srand((unsigned)time(NULL));
+                    for (int i = 0; i < m_Map.Tile_CountY; i++)
                     {
-                        EnterCriticalSection(&cs);
-                        srand((unsigned)time(NULL));
-                        for (int i = 0; i < m_Map.Tile_CountY; i++)
-                        {
-                            for (int j = 0; j < m_Map.Tile_CountX; j++) {
-                                ItemValue = rand() % 30;
-                                if (ItemValue != 0 && ItemValue != 7 && m_Map.isBox[0][i][j]) {
-                                    Item_P.x = i;
-                                    Item_P.y = j;
-                                    Item_P.idx_player= ItemValue;
-                                    Item_P.type = item;
-                                    retval = send(client_sock, (char*)&Item_P, sizeof(Item_P), 0);
-                                    if (retval == SOCKET_ERROR) {
-                                        m_SF.err_display("send()");
-                                        break;
-                                    }
+                        for (int j = 0; j < m_Map.Tile_CountX; j++) {
+                            ItemValue = rand() % 30;
+                            if (ItemValue != 0 && ItemValue != 7 && m_Map.isBox[0][i][j]) {
+                                Item_P.x = i;
+                                Item_P.y = j;
+                                Item_P.idx_player = ItemValue;
+                                Item_P.type = PacketType::item;
+                                retval = send(client_sock, (char*)&Item_P, sizeof(Item_P), 0);
+                                if (retval == SOCKET_ERROR) {
+                                    m_SF.err_display("send()");
+                                    break;
                                 }
                             }
                         }
-                        LeaveCriticalSection(&cs);
-                        ItemReady[Thread_idx] = TRUE;
                     }
-                    if (ItemReady[0] && ItemReady[1])
-                    {
-                        EnterCriticalSection(&cs);
-                        m_PF.InitPacket(&Send_P);
-                        Send_P.type = start;
-                        LeaveCriticalSection(&cs);
-                        retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
-                        if (retval == SOCKET_ERROR) {
-                            m_SF.err_display("send()");
-                            break;
-                        }
-                        printf("Send %d번 게임 시작 신호 보냄\n", client_ID[Thread_idx]);
-                        SetEvent(hRecvEvent);
-                        GameState = InGame;
-                    }
+                    LeaveCriticalSection(&cs);
+                    ItemReady[Thread_idx] = TRUE;
                 }
-            }
-            else if (Thread_Count == 2)
-            {
-                if (Ready[0] && Ready[1]&&Ready[2])
+                if (ItemReady[0] && ItemReady[1] && ItemReady[2] && ItemReady[3])
                 {
-                    if (!ItemReady[Thread_idx])
-                    {
-                        EnterCriticalSection(&cs);
-                        srand((unsigned)time(NULL));
-                        for (int i = 0; i < m_Map.Tile_CountY; i++)
-                        {
-                            for (int j = 0; j < m_Map.Tile_CountX; j++) {
-                                ItemValue = rand() % 30;
-                                if (ItemValue != 0 && ItemValue != 7 && m_Map.isBox[0][i][j]) {
-                                    Item_P.x = i;
-                                    Item_P.y = j;
-                                    Item_P.idx_player = ItemValue;
-                                    Item_P.type = item;
-                                    retval = send(client_sock, (char*)&Item_P, sizeof(Item_P), 0);
-                                    if (retval == SOCKET_ERROR) {
-                                        m_SF.err_display("send()");
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        LeaveCriticalSection(&cs);
-                        ItemReady[Thread_idx] = TRUE;
+                    EnterCriticalSection(&cs);
+                    m_PF.InitPacket(&Send_P);
+                    Send_P.type = start;
+                    LeaveCriticalSection(&cs);
+                    retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
+                    if (retval == SOCKET_ERROR) {
+                        m_SF.err_display("send()");
+                        break;
                     }
-                    if (ItemReady[0] && ItemReady[1] && ItemReady[2])
-                    {
-                        EnterCriticalSection(&cs);
-                        m_PF.InitPacket(&Send_P);
-                        Send_P.type = start;
-                        LeaveCriticalSection(&cs);
-                        retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
-                        if (retval == SOCKET_ERROR) {
-                            m_SF.err_display("send()");
-                            break;
-                        }
-                        printf("Send %d번 게임 시작 신호 보냄\n", client_ID[Thread_idx]);
-                        SetEvent(hRecvEvent);
-                        GameState = InGame;
-                    }
+                    printf("Send %d번 게임 시작 신호 보냄\n", client_ID[Thread_idx]);
+                    SetEvent(hRecvEvent);
+                    GameState = InGame;
                 }
             }
         }
@@ -230,6 +190,12 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
             }
             printf("Send %d번: [%d] S->C: type = %d %d %d\n", client_ID[Thread_idx], ntohs(clientaddr.sin_port),
                 Send_P.type, Send_P.x, Send_P.y);
+
+            if (Send_P.type == end)
+                Game_Over[Thread_idx] = TRUE;
+            if (Game_Over[0] && Game_Over[1] && Game_Over[2])
+                GameState = GameOver;
+
             ResetEvent(hSendEvent[Thread_idx]);
         }
         if (GameState == GameOver)
@@ -251,6 +217,7 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
 
     int Thread_idx = Thread_Count;
 
+
     int recv_ClientID = 0; // 데이터를 서버로 보내는 클라의 ID 저장
 
     int startsign = 0;
@@ -258,6 +225,7 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
     // 클라이언트 정보 얻기
     addrlen = sizeof(clientaddr);
     getpeername(client_sock, (SOCKADDR*)&clientaddr, &addrlen);
+
 
     while (1) {
         // 클라이언트와 데이터 통신
@@ -288,19 +256,31 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
             printf("Recv %d번:[%d] S<-C: type = %d %d %d\n", client_ID[Thread_idx], ntohs(clientaddr.sin_port),
                 Recv_P.type, Recv_P.x, Recv_P.y);
             EnterCriticalSection(&cs);
+            
             m_PF.InitPacket(&Send_P);
             Send_P = Recv_P;
+            if (Recv_P.status == Status::DEAD)
+            {
+                Death_count++;
+                if (Thread_Count - Death_count == 0)
+                    Send_P.type = end;
+            }
             m_PF.InitPacket(&Recv_P);
+
             for (int i = 0; i < MAX_CLIENT; i++)
                 if (ThreadOn[i])
                     SetEvent(hSendEvent[i]);
             LeaveCriticalSection(&cs);
+
             /*if (!ThreadOn[0] || !ThreadOn[1])
                 break;*/
         }
         if (GameState == GameOver)
         {
+            EnterCriticalSection(&cs);
             InitGame();
+            GameState = Robby;
+            LeaveCriticalSection(&cs);
         }
 
     }
@@ -312,8 +292,8 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
     ThreadOn[Thread_idx] = FALSE;
     InRobby[Thread_idx] = FALSE;
     Thread_Count = Thread_idx - 1;
-    Ready[Thread_idx] = FALSE;
-    ItemReady[Thread_idx] = FALSE;
+    Ready[Thread_idx] = TRUE;
+    ItemReady[Thread_idx] = TRUE;
     Accept_count - 1;
 
     printf("[TCP 서버] %d번째 클라이언트 종료: IP 주소=%s, ID=%d\n",
@@ -362,9 +342,8 @@ int main(int argc, char* argv[])
 
     int count = 0;
 
-    hSendEvent[0] = CreateEvent(NULL, TRUE, TRUE, NULL);
-    hSendEvent[1] = CreateEvent(NULL, TRUE, TRUE, NULL);
-    hSendEvent[2] = CreateEvent(NULL, TRUE, TRUE, NULL);
+    for (int i = 0; i < MAX_CLIENT;i++)
+        hSendEvent[i] = CreateEvent(NULL, TRUE, TRUE, NULL);
     hRecvEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
     InitializeCriticalSection(&cs);
@@ -389,9 +368,10 @@ int main(int argc, char* argv[])
                         Thread_Count++;
                 }
 
-                printf("\n[TCP 서버] %d번 클라이언트 접속: IP 주소=%s, 포트 번호=%d\n",
-                    Thread_Count+1, inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
                 // 접속한 클라이언트 정보 출력
+                printf("\n[TCP 서버] %d번 클라이언트 접속: IP 주소=%s, 포트 번호=%d\n",
+                    Thread_Count + 1, inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
+
                 m_Map.Init_Map();
                 m_PF.InitPacket(&Recv_P);
                 m_PF.InitPacket(&Send_P);

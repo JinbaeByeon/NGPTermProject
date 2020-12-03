@@ -4,7 +4,7 @@
 
 void PacketFunc::InitPlayer(CMap m_Map, InputPacket *Send_P, int idx)
 {
-    Send_P->type = player;
+    Send_P->type = PacketType::player;
     Send_P->idx_player = idx;
     if (idx == 0)
         Send_P->x = m_Map.Tile[0][0].left, Send_P->y = m_Map.Tile[0][0].top
@@ -40,7 +40,7 @@ void PacketFunc::InitItem(ItemPacket* P, CMap m_Map)
             if (ItemValue != 0 && ItemValue != 7) {
                 P->x = m_Map.Tile[i][j].left;
                 P->y = m_Map.Tile[i][j].top;
-                P->type = item;
+                P->type = PacketType::item;
                 P->value = ItemValue;
             }
         }
