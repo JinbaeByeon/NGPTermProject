@@ -1345,6 +1345,15 @@ void CALLBACK TimeProc_InBubble(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime
 					KillTimer(hwnd, In_Bubble);
 				bInBubble[i] = FALSE;
 				bDie[i] = TRUE;
+				if (i == Client_Idx)
+				{
+					WaitForSingleObject(hSendEvent, INFINITE);
+					if (!Send_Client_Packet) {
+						Send_Client_Packet = new InputPacket(Client_Idx, Player[Client_Idx].left, Player[Client_Idx].top, Status::Dead);
+						Send_Client_Packet->type = PacketType::player;
+					}
+					SetEvent(hInputEvent);
+				}
 				CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Character_Die.ogg");
 				SetTimer(hwnd, Die, 150, (TIMERPROC)TimeProc_Die);
 			}

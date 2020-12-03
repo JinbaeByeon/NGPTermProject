@@ -23,13 +23,16 @@ extern int Client_Idx;
 extern int nPlayer;
 extern int xPos_Player[4];
 extern int yPos_Player[4];
-extern BOOL Player_Bubble[4][7];
+extern BOOL Player_Bubble[4][7]; 
+extern BOOL Player_Bubble_Flow[4][7];
 extern RECT Tile_Bubble[4][7];
 extern int Power[4];
 extern int Itemset[2][13][15];
 extern BOOL bInBubble[4];
+extern BOOL bDie[4];
 extern int Player_bCount[4]; 
 extern int Player_Speed[4];
+extern BOOL Ending;
 
 
 
@@ -172,6 +175,10 @@ DWORD WINAPI RecvClient(LPVOID arg)
                     SetTimer(hwnd, Timer::In_Bubble, Player_Speed[Recv_Player_Packet->idx_player], (TIMERPROC)TimeProc_InBubble);
                     bInBubble[Recv_Player_Packet->idx_player] = TRUE;
                 }
+                else if (Recv_Player_Packet->status == Status::Dead)
+                {
+                    continue;
+                }
                 else {
                     Player[Recv_Player_Packet->idx_player].left = Recv_Player_Packet->x;
                     Player[Recv_Player_Packet->idx_player].right = Player[Client_Idx].left + Player_CX;
@@ -193,9 +200,9 @@ DWORD WINAPI RecvClient(LPVOID arg)
             else if (Recv_Player_Packet->type == PacketType::bubble)
             {
                 printf("버블 패킷 수신 -> type : %d x : %d y : %d\n\n", Recv_Player_Packet->type, Recv_Player_Packet->x, Recv_Player_Packet->y);
-                for (int i = 0; i < 7; i++)
+                for (int i = 0; i < Player_bCount[Recv_Player_Packet->idx_player]; i++)
                 {
-                    if (Player_Bubble[Recv_Player_Packet->idx_player][i] == TRUE)
+                    if (Player_Bubble[Recv_Player_Packet->idx_player][i] == TRUE || Player_Bubble_Flow[Recv_Player_Packet->idx_player][i] == TRUE)
                     {
                         continue;
                     }
@@ -253,6 +260,11 @@ DWORD WINAPI RecvClient(LPVOID arg)
                     Power[Recv_Player_Packet->idx_player] = 7;
                 }
                 Itemset[Sel_Map][Recv_Player_Packet->x][Recv_Player_Packet->y] = 0;
+            }
+            else if (Recv_Player_Packet->type == PacketType::end)
+            {
+                Ending = true;
+                GameState = ROBBY;
             }
         }
     }
