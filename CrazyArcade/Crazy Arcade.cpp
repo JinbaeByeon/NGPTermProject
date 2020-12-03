@@ -1868,7 +1868,7 @@ void SetPos()
 	}
 }
 
-// 테스트 진행할 때 쓰는 SetPos()
+// ////테스트 진행할 때 쓰는 SetPos()
 //void SetPos()
 //{
 //	// 맵 좌표 설정

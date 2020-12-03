@@ -35,6 +35,7 @@ extern int Player_Speed[4];
 extern BOOL Ending;
 extern int BubbleResource[4];
 extern int BubbleCount[4];
+extern BOOL Player_Bubble_Boom[4][7];
 
 
 
@@ -56,6 +57,7 @@ extern void CALLBACK TimeProc_Text(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwT
 extern void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 extern void CALLBACK TimeProc_InBubble(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 extern void CALLBACK TimeProc_Die(HWND hWnd, UINT uMsg, UINT ideEvent, DWORD dwTime);
+extern void SetPos();
 
 int recvn(SOCKET s, char* buf, int len, int flags)
 {
@@ -271,6 +273,25 @@ DWORD WINAPI RecvClient(LPVOID arg)
             {
                 Ending = true;
                 GameState = ROBBY;
+                for (int i = 0; i < MAX_PLAYER; ++i) {
+                    Player_Speed[i] = 35;
+                    Player_bCount[i] = 1;
+                    Power[i] = 1;
+                    bDie[i] = FALSE;
+                    bInBubble[i] = FALSE;
+                    BubbleCount[i] = 0;
+                }
+                //    for (int j = 0; j < 7; j++)
+                //    {
+                //        Player_Bubble[i][j] = FALSE;
+                //        Player_Bubble_Flow[i][j] = FALSE;
+                //        Player_Bubble_Boom[i][j] = FALSE;
+                //        Player_Bubble_Flow[i][j] = TRUE;
+                //    }
+                //}
+                //KillTimer(hwnd, In_Bubble);
+                //KillTimer(hwnd, Die);
+                SetPos();
             }
         }
     }
