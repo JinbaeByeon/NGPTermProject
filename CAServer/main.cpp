@@ -38,13 +38,11 @@ void InitGame()
 {
     Death_count = 0;
     GameState = Robby;
-    for (int i = 0; i < MAX_CLIENT; i++)
+    for (int i = 0; i <= Thread_Count; i++)
     {
         Ready[i] = FALSE;
         ItemReady[i] = FALSE;
         Game_Over[i] = FALSE;
-        m_PF.InitPacket(&Send_P);
-        m_PF.InitPacket(&Recv_P);
     }
 }
 
@@ -160,6 +158,7 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                             }
                         }
                     }
+                    printf("Send %d번 아이템 위치 보냄\n", client_ID[Thread_idx]);
                     LeaveCriticalSection(&cs);
                     ItemReady[Thread_idx] = TRUE;
                 }
@@ -193,14 +192,18 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
 
             if (Send_P.type == end)
                 Game_Over[Thread_idx] = TRUE;
-            if (Game_Over[0] && Game_Over[1] && Game_Over[2])
+            if (Game_Over[0] && Game_Over[1] && Game_Over[2] && Game_Over[3])
+            {
                 GameState = GameOver;
+                printf("%d번: [%d] 게임 종료\n"
+                    , client_ID[Thread_idx], ntohs(clientaddr.sin_port));
+            }
 
             ResetEvent(hSendEvent[Thread_idx]);
         }
         if (GameState == GameOver)
         {
-
+            InitGame();
         }
 
     }
@@ -255,6 +258,14 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
             }
             printf("Recv %d번:[%d] S<-C: type = %d %d %d\n", client_ID[Thread_idx], ntohs(clientaddr.sin_port),
                 Recv_P.type, Recv_P.x, Recv_P.y);
+
+            // 게임이 종료되도 다른 스레드는 여기일수도 있음..
+            if (Recv_P.type == ready) {
+                Ready[Thread_idx] = TRUE;
+                printf("Recv %d번: [%d] S<-C: %d = 시작 신호\n", client_ID[Thread_idx], ntohs(clientaddr.sin_port), Recv_P.type);
+                m_PF.InitPacket(&Recv_P);
+            }
+
             EnterCriticalSection(&cs);
             
             m_PF.InitPacket(&Send_P);
@@ -262,7 +273,7 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
             if (Recv_P.status == Status::DEAD)
             {
                 Death_count++;
-                if (Thread_Count - Death_count == 0)
+                if (Thread_Count - Death_count <= 0)
                     Send_P.type = end;
             }
             m_PF.InitPacket(&Recv_P);
@@ -274,13 +285,6 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
 
             /*if (!ThreadOn[0] || !ThreadOn[1])
                 break;*/
-        }
-        if (GameState == GameOver)
-        {
-            EnterCriticalSection(&cs);
-            InitGame();
-            GameState = Robby;
-            LeaveCriticalSection(&cs);
         }
 
     }
