@@ -1161,6 +1161,7 @@ void CALLBACK TimeProc_Bubble_Flow(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwT
 void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
 	RECT tmpRECT = Player[Client_Idx];
+	RECT rc;
 
 	switch (yPos_Player[Client_Idx]) {
 	case LEFT:
@@ -1271,7 +1272,7 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 					tmpRECT.top = Tile_Bubble[i][j].bottom;
 					tmpRECT.bottom = tmpRECT.top + Player_CY;
 				}
-			}
+			}			
 		}
 		break;
 	case DOWN:
@@ -1311,6 +1312,23 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 			}
 		}
 		break;
+	}
+
+	for (int i = 0; i < nPlayer; i++)
+	{
+		if (bInBubble[i] && i != Client_Idx)
+		{
+			printf("인버블\n");
+			if (IntersectRect(&rc, &tmpRECT, &Player[i]) && !bDie[Client_Idx] && !bInBubble[Client_Idx]) {
+				printf("해치웠냐?");
+				WaitForSingleObject(hSendEvent, INFINITE);
+				if (!Send_Client_Packet) {
+					Send_Client_Packet = new InputPacket(i, Player[i].left, Player[i].top, Status::Dead);
+					Send_Client_Packet->type = PacketType::player;
+				}
+				SetEvent(hInputEvent);
+			}
+		}
 	}
 	// 플레이어 이동 패킷 생성 - 상태 아직 안보냄
 	
@@ -1850,3 +1868,185 @@ void SetPos()
 	}
 }
 
+// 테스트 진행할 때 쓰는 SetPos()
+//void SetPos()
+//{
+//	// 맵 좌표 설정
+//	for (int i = 0; i < Tile_CountY; i++)
+//		for (int j = 0; j < Tile_CountX; j++) {
+//			Tile[i][j] = { StartX + j * Tile_CX,StartY + i * Tile_CY, StartX + (j + 1) * Tile_CX,StartY + (i + 1) * Tile_CY };
+//			if ((i == 0 || i == 2 || i == 4 || i == 6) && (j == 10 || j == 12 || j == 14)) {
+//				Tile_Enable_Move[0][i][j] = TRUE;
+//				if (rand() % 3 == 0)
+//					isTree[i][j] = TRUE;
+//				if (rand() % 3)
+//					isHouse0[i][j] = TRUE;
+//				else if (rand() % 2)
+//					isHouse1[i][j] = TRUE;
+//			}
+//			else if ((i == 6 || i == 8 || i == 10 || i == 12) && (j == 0 || j == 2 || j == 4)) {
+//				Tile_Enable_Move[0][i][j] = TRUE;
+//				if (rand() % 3 == 0)
+//					isTree[i][j] = TRUE;
+//				if (rand() % 3)
+//					isHouse0[i][j] = TRUE;
+//				else if (rand() % 2)
+//					isHouse1[i][j] = TRUE;
+//			}
+//			else if ((i == 1 || i == 3 || i == 5) && (j == 1 || j == 3 || j == 5)) {
+//				Tile_Enable_Move[0][i][j] = TRUE;
+//				if (rand() % 3 == 0)
+//					isTree[i][j] = TRUE;
+//				if (rand() % 3)
+//					isHouse0[i][j] = TRUE;
+//				else if (rand() % 2)
+//					isHouse1[i][j] = TRUE;
+//			}
+//			else if ((i == 7 || i == 9 || i == 11) && (j == 9 || j == 11 || j == 13)) {
+//				Tile_Enable_Move[0][i][j] = TRUE;
+//				if (rand() % 3 == 0)
+//					isTree[i][j] = TRUE;
+//				if (rand() % 3)
+//					isHouse0[i][j] = TRUE;
+//				else if (rand() % 2)
+//					isHouse1[i][j] = TRUE;
+//			}
+//			else if ((i == 1 || i == 3 || i == 9 || i == 11) && (j == 5 || j == 9)) {
+//				Tile_Enable_Move[0][i][j] = TRUE;
+//				if (rand() % 3 == 0)
+//					isTree[i][j] = TRUE;
+//				if (rand() % 3)
+//					isHouse0[i][j] = TRUE;
+//				else if (rand() % 2)
+//					isHouse1[i][j] = TRUE;
+//			}
+//			else {
+//				Tile_Enable_Move[0][i][j] = TRUE;
+//				if ((j != 6 && j != 7 && j != 8) &&
+//					!(j == 0 && (i == 0 || i == 1 || i == 11)) &&
+//					!(j == 1 && (i == 0 || i == 10 || i == 11 || i == 12)) &&
+//					!(j == 12 && i == 1) &&
+//					!(j == 13 && (i == 0 || i == 1 || i == 12)) &&
+//					!(j == 14 && (i == 1 || i == 11 || i == 12)) &&
+//					!(j == 5 && i == 7) && !(j == 9 && i == 5)) {
+//					Box[i][j] = { Tile[i][j].left,Tile[i][j].top - 4,Tile[i][j].right,Tile[i][j].bottom };
+//					isBox[0][i][j] = FALSE;
+//					if (rand() % 2)
+//						isBox1[i][j] = FALSE;
+//				}
+//			}
+//
+//
+//			if ((i == 1 && j == 2) || (i == 2 && j == 1) || (i == 1 && j == 1) || (j == 13 && i == 1) || (j == 13 && i == 2) || (j == 12 && i == 1)) {
+//				Tile_Enable_Move[1][i][j] = FALSE;
+//				isSteel[i][j] = TRUE;
+//			}
+//			else if (i == 1 && (j == 3 || j == 4 || j == 5 || j == 9 || j == 10 || j == 11)
+//				|| (j == 1 && (i == 3 || i == 4 || i == 5)) || (j == 13 && (i == 3 || i == 4 || i == 5))) {
+//				Tile_Enable_Move[1][i][j] = TRUE;
+//				isBox[1][i][j] = FALSE;
+//			}
+//			else if ((j == 2 || j == 12) && i == 5) {
+//				Tile_Enable_Move[1][i][j] = FALSE;
+//				isStone[i][j] = TRUE;
+//			}
+//			else
+//				Tile_Enable_Move[1][i][j] = TRUE;
+//		}
+//
+//	srand((unsigned)time(NULL));
+//	//// 맵1 아이템
+//	//for (int i = 0; i < Tile_CountY; i++)
+//	//	for (int j = 0; j < Tile_CountX; j++) {
+//	//		ItemValue = rand() % 30;
+//	//		if (ItemValue != 0 && ItemValue != 7 && isBox[0][i][j]) {
+//	//			Itemset[0][i][j] = ItemValue;
+//	//		}
+//	//	}
+//
+//	// 맵2 아이템
+//	for (int i = 0; i < Tile_CountY; i++)
+//		for (int j = 0; j < Tile_CountX; j++) {
+//			if (i == 8 || i == 9) {
+//				if (j == 5 || j == 6)
+//					Itemset[1][i][j] = Speed;
+//				else if (j == 7 || j == 8)
+//					Itemset[1][i][j] = Ball;
+//				else if (j == 9)
+//					Itemset[1][i][j] = MaxPower;
+//			}
+//		}
+//
+//
+//	// 플레이어 좌표 설정
+//	//Player1 = Tile[0][0];
+//	//Player1.right = Player1.left + Player_CX;
+//	//Player1.top = Player1.bottom - Player_CY;
+//
+//	Player[0] = Tile[0][0];
+//	Player[0].right = Player[0].left + Player_CX;
+//	Player[0].bottom = Player[0].top + Player_CY;
+//
+//	Player[1] = Tile[12][1];
+//	Player[1].right = Player[1].left + Player_CX;
+//	Player[1].bottom = Player[1].top + Player_CY;
+//
+//	Player[2] = Tile[1][13];
+//	Player[2].right = Player[2].left + Player_CX;
+//	Player[2].bottom = Player[2].top + Player_CY;
+//
+//	Player[3] = Tile[12][13];
+//	Player[3].right = Player[3].left + Player_CX;
+//	Player[3].bottom = Player[3].top + Player_CY;
+//
+//
+//	//GAMESTATE==In LOBBY 일때 좌표 설정.
+//	GameMap1.left = 630;
+//	GameMap1.top = 340;
+//	GameMap1.right = GameMap1.left + 135;
+//	GameMap1.bottom = GameMap1.top + 21;
+//	GameMap2.left = 630;
+//	GameMap2.top = 355;
+//	GameMap2.right = GameMap2.left + 135;
+//	GameMap2.bottom = GameMap2.top + 21;
+//	GameStart.left = 500;
+//	GameStart.top = 487;
+//	GameStart.right = GameStart.left + BG_X / 2;
+//	GameStart.bottom = GameStart.top + BG_Y;
+//	GameLogo.left = 305;
+//	GameLogo.top = 430;
+//	GameLogo.right = 305 + BG_X / 2;
+//	GameLogo.bottom = 430 + BG_Y;
+//	ePos.left = 645;
+//	ePos.top = 560;
+//	ePos.right = ePos.left + 140;
+//	ePos.bottom = ePos.top + 32;
+//
+//	// 플레이어 설정 세팅
+//	P1_Name.left = 58;
+//	P1_Name.top = 85;
+//	P1_Name.right = 171;
+//	P1_Name.bottom = 108;
+//
+//	P2_Name.left = 246;
+//	P2_Name.top = 92;
+//	P2_Name.right = 371;
+//	P2_Name.bottom = 108;
+//	P1_NIDDLE.left = 44, P1_NIDDLE.top = 243, P1_NIDDLE.right = P1_NIDDLE.left + 33, P1_NIDDLE.bottom = P1_NIDDLE.top + 26;
+//
+//	// 플레이어 로비 위치
+//	/*Player_Robby[0].left = 38;
+//	Player_Robby[0].top = 114;
+//	Player_Robby[0].right = 38+158;
+//	Player_Robby[0].bottom = 114+188;
+//
+//	Player_Robby[1].left = 227;
+//	Player_Robby[1].top = 114;
+//	Player_Robby[1].right = 227 + 158;
+//	Player_Robby[1].bottom = 114 + 188;*/
+//
+//	for (int i = 0; i < MAX_PLAYER; ++i) {
+//		Player_RobbyX[i] = 38 + 189 * i;
+//		Player_RobbyY[i] = 84;
+//	}
+//}

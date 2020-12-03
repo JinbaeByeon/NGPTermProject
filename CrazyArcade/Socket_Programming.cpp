@@ -33,7 +33,8 @@ extern BOOL bDie[4];
 extern int Player_bCount[4]; 
 extern int Player_Speed[4];
 extern BOOL Ending;
-
+extern int BubbleResource[4];
+extern int BubbleCount[4];
 
 
 
@@ -54,7 +55,7 @@ extern BOOL Player_Move[MAX_PLAYER];
 extern void CALLBACK TimeProc_Text(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 extern void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 extern void CALLBACK TimeProc_InBubble(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
-
+extern void CALLBACK TimeProc_Die(HWND hWnd, UINT uMsg, UINT ideEvent, DWORD dwTime);
 
 int recvn(SOCKET s, char* buf, int len, int flags)
 {
@@ -177,7 +178,12 @@ DWORD WINAPI RecvClient(LPVOID arg)
                 }
                 else if (Recv_Player_Packet->status == Status::Dead)
                 {
-                    continue;
+                    bInBubble[Recv_Player_Packet->idx_player] = FALSE;
+                    bDie[Recv_Player_Packet->idx_player] = TRUE;
+                    BubbleResource[Recv_Player_Packet->idx_player] = 3;
+                    BubbleCount[Recv_Player_Packet->idx_player] = 0;
+                    CSoundMgr::GetInstance()->PlayEffectSound(L"SFX_Character_Die.ogg");
+                    SetTimer(hwnd, Die, 150, (TIMERPROC)TimeProc_Die);
                 }
                 else {
                     Player[Recv_Player_Packet->idx_player].left = Recv_Player_Packet->x;
