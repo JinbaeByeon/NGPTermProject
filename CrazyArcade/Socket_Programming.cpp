@@ -36,6 +36,11 @@ extern BOOL Ending;
 extern int BubbleResource[4];
 extern int BubbleCount[4];
 extern BOOL Player_Bubble_Boom[4][7];
+extern int MoveResource[4][7];
+extern int Player_Dying[4];
+extern BOOL Player_Remove[4];
+extern int Bubble_cnt[4][7];
+extern BOOL Box_Break[13][15];
 
 
 
@@ -273,6 +278,8 @@ DWORD WINAPI RecvClient(LPVOID arg)
             {
                 Ending = true;
                 GameState = ROBBY;
+                TextOn = FALSE;
+                bSceneChange = true;
                 for (int i = 0; i < MAX_PLAYER; ++i) {
                     Player_Speed[i] = 35;
                     Player_bCount[i] = 1;
@@ -280,17 +287,33 @@ DWORD WINAPI RecvClient(LPVOID arg)
                     bDie[i] = FALSE;
                     bInBubble[i] = FALSE;
                     BubbleCount[i] = 0;
+                    BubbleResource[i] = 0;
+                    xPos_Player[i] = 0;
+                    yPos_Player[i] = 1;
+                    Player_Dying[i] = 0;
+                    Player_Remove[i] = FALSE;
+                    Player_Move[i] = FALSE;
+                    for (int j = 0; j < 7; j++)
+                    {
+                        MoveResource[i][j] = 0;
+                        Player_Bubble[i][j] = FALSE;
+                        Player_Bubble_Flow[i][j] = FALSE;
+                        Player_Bubble_Boom[i][j] = FALSE;
+                        Bubble_cnt[i][j] = 0;
+                        Tile_Bubble[i][j] = { 0,0,0,0 };
+                    }
                 }
-                //    for (int j = 0; j < 7; j++)
-                //    {
-                //        Player_Bubble[i][j] = FALSE;
-                //        Player_Bubble_Flow[i][j] = FALSE;
-                //        Player_Bubble_Boom[i][j] = FALSE;
-                //        Player_Bubble_Flow[i][j] = TRUE;
-                //    }
-                //}
-                //KillTimer(hwnd, In_Bubble);
-                //KillTimer(hwnd, Die);
+                for (int i = 0; i < 13; i++)
+                {
+                    for (int j = 0; j < 15; j++)
+                    {
+                        Box_Break[i][j] = FALSE;
+                        Itemset[0][i][j] = 0;
+                    }
+                }
+                KillTimer(hwnd, In_Bubble);
+                KillTimer(hwnd, Die);
+                KillTimer(hwnd, Bubble_Flow);
                 SetPos();
             }
         }
