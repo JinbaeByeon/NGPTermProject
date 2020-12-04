@@ -10,7 +10,7 @@ BOOL InRobby[4] = { FALSE, }; // 로비 접속 확인
 BOOL Ready[4] = { TRUE, TRUE, TRUE, TRUE }; // 게임 시작 준비 확인
 BOOL ItemReady[4] = { TRUE,TRUE,TRUE, TRUE };  // 아이템 초기화 확인
 BOOL Game_Over[4] = { TRUE, TRUE, TRUE, TRUE }; // 각 스레드 게임 오버 처리 확인
- 
+
 int Thread_Count = -1; // send+recv스레드 쌍 갯수
 
 HANDLE hSendEvent[4];  // 스레드별 send이벤트
@@ -36,7 +36,7 @@ int ItemValue;
 
 void InitGame()
 {
-    for (int i = 0; i <MAX_CLIENT; i++)
+    for (int i = 0; i < MAX_CLIENT; i++)
     {
         if (ThreadOn[i])
         {
@@ -101,20 +101,20 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                     if (Thread_Count != i)
                         ResetEvent(hSendEvent[i]);*/
 
-                /*for (int i = 0; i < Accept_count; i++)
-                {
-                    if (i != Thread_idx)
-                    {
-                        m_PF.InitPlayer(m_Map, &Send_P, Thread_Count);
-                        retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
-                        if (retval == SOCKET_ERROR) {
-                            m_SF.err_display("send()");
-                            break;
-                        }
-                        printf("Send %d번에게 %d번 클라이언트의 위치 전숑 : %d %d\n",
-                            client_ID[Thread_idx], Send_P.idx_player + 1, Send_P.x, Send_P.y);
-                    }
-                }*/
+                        /*for (int i = 0; i < Accept_count; i++)
+                        {
+                            if (i != Thread_idx)
+                            {
+                                m_PF.InitPlayer(m_Map, &Send_P, Thread_Count);
+                                retval = send(client_sock, (char*)&Send_P, sizeof(InputPacket), 0);
+                                if (retval == SOCKET_ERROR) {
+                                    m_SF.err_display("send()");
+                                    break;
+                                }
+                                printf("Send %d번에게 %d번 클라이언트의 위치 전숑 : %d %d\n",
+                                    client_ID[Thread_idx], Send_P.idx_player + 1, Send_P.x, Send_P.y);
+                            }
+                        }*/
 
                 LeaveCriticalSection(&cs);
 
@@ -248,22 +248,18 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
                 m_SF.err_display("recv()");
                 break;
             }
-            EnterCriticalSection(&cs);
             if (Recv_P.type == ready) {
                 printf("Recv %d번: [%d] S<-C: %d = 시작 신호\n", client_ID[Thread_idx], ntohs(clientaddr.sin_port), Recv_P.type);
                 m_PF.InitPacket(&Recv_P);
                 Ready[Thread_idx] = TRUE;
-                printf("%d = %d:%d:%d\n", Thread_idx, Ready[Thread_idx]
-                    , ItemReady[Thread_idx], Game_Over[Thread_idx]);
                 GameState = Gameready;
-                m_PF.InitPacket(&Send_P);
-                m_PF.InitPacket(&Recv_P);
                 for (int i = 0; i < MAX_CLIENT; i++)
                     if (ThreadOn[i])
                         SetEvent(hSendEvent[i]);
             }
             else
             {
+                EnterCriticalSection(&cs);
                 printf("Recv %d번:[%d] S<-C: type = %d %d %d\n", client_ID[Thread_idx], ntohs(clientaddr.sin_port),
                     Recv_P.type, Recv_P.x, Recv_P.y);
                 m_PF.InitPacket(&Send_P);
@@ -278,8 +274,8 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
                     if (ThreadOn[i])
                         SetEvent(hSendEvent[i]);
                 m_PF.InitPacket(&Recv_P);
+                LeaveCriticalSection(&cs);
             }
-            LeaveCriticalSection(&cs);
         }
 
     }
@@ -341,14 +337,14 @@ int main(int argc, char* argv[])
 
     int count = 0;
 
-    for (int i = 0; i < MAX_CLIENT;i++)
+    for (int i = 0; i < MAX_CLIENT; i++)
         hSendEvent[i] = CreateEvent(NULL, TRUE, TRUE, NULL);
     hRecvEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
 
     InitializeCriticalSection(&cs);
 
     while (1) {
-        if (Thread_Count+1 < MAX_CLIENT)
+        if (Thread_Count + 1 < MAX_CLIENT)
         {
             // accept()
             addrlen = sizeof(clientaddr);
