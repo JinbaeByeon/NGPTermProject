@@ -276,10 +276,16 @@ DWORD WINAPI RecvClient(LPVOID arg)
             }
             else if (Recv_Player_Packet->type == PacketType::end)
             {
+                if(bDie[Client_Idx])
+                    CSoundMgr::GetInstance()->PlayEffectSound2(L"SFX_Word_Lose.ogg");
+                else
+                    CSoundMgr::GetInstance()->PlayEffectSound2(L"SFX_Word_Win.ogg");
                 Ending = true;
                 GameState = ROBBY;
                 TextOn = FALSE;
                 bSceneChange = true;
+                for (int i = 0; i < nPlayer; ++i)
+                    Player_Live[i] = true;
                 for (int i = 0; i < MAX_PLAYER; ++i) {
                     Player_Speed[i] = 35;
                     Player_bCount[i] = 1;
@@ -314,6 +320,7 @@ DWORD WINAPI RecvClient(LPVOID arg)
                 KillTimer(hwnd, In_Bubble);
                 KillTimer(hwnd, Die);
                 KillTimer(hwnd, Bubble_Flow);
+                KillTimer(hwnd, P1);
                 SetPos();
             }
         }
