@@ -18,6 +18,7 @@
 enum GameState {
 	Accept = 1,
 	Robby = 2,
-	InGame = 3,
-	GameOver = 4
+	Gameready = 3,
+	InGame = 4,
+	GameOver = 5
 };

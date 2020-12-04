@@ -36,14 +36,18 @@ int ItemValue;
 
 void InitGame()
 {
+    for (int i = 0; i <MAX_CLIENT; i++)
+    {
+        if (ThreadOn[i])
+        {
+            Ready[i] = FALSE;
+            ItemReady[i] = FALSE;
+            Game_Over[i] = FALSE;
+            printf("%d = %d:%d:%d\n", i, Ready[i], ItemReady[i], Game_Over[i]);
+        }
+    }
     Death_count = 0;
     GameState = Robby;
-    for (int i = 0; i <= Thread_Count; i++)
-    {
-        Ready[i] = FALSE;
-        ItemReady[i] = FALSE;
-        Game_Over[i] = FALSE;
-    }
 }
 
 DWORD WINAPI SendThreadFunc(LPVOID arg)
@@ -129,11 +133,14 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                         break;
                     }
                     printf("Send %d번에게 %d번 클라이언트의 위치 전송 : %d %d\n",
-                        client_ID[Thread_idx], Send_P.idx_player+1, Send_P.x, Send_P.y);
+                        client_ID[Thread_idx], Send_P.idx_player + 1, Send_P.x, Send_P.y);
                     LeaveCriticalSection(&cs);
                 }
             }
 
+        }
+        if (GameState == Gameready)
+        {
             // 게임 시작 판단
             if (Ready[0] && Ready[1] && Ready[2] && Ready[3])
             {
@@ -158,9 +165,10 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                             }
                         }
                     }
-                    printf("Send %d번 아이템 위치 보냄\n", client_ID[Thread_idx]);
                     LeaveCriticalSection(&cs);
+                    printf("Send %d번 아이템 위치 보냄\n", client_ID[Thread_idx]);
                     ItemReady[Thread_idx] = TRUE;
+                    printf("%d, %d, %d, %d\n", ItemReady[0], ItemReady[1], ItemReady[2], ItemReady[3]);
                 }
                 if (ItemReady[0] && ItemReady[1] && ItemReady[2] && ItemReady[3])
                 {
@@ -174,7 +182,6 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
                         break;
                     }
                     printf("Send %d번 게임 시작 신호 보냄\n", client_ID[Thread_idx]);
-                    SetEvent(hRecvEvent);
                     GameState = InGame;
                 }
             }
@@ -200,6 +207,7 @@ DWORD WINAPI SendThreadFunc(LPVOID arg)
             }
 
             ResetEvent(hSendEvent[Thread_idx]);
+            //SetEvent(hRecvEvent);
         }
         if (GameState == GameOver)
         {
@@ -233,58 +241,45 @@ DWORD WINAPI RecvThreadFunc(LPVOID arg)
     while (1) {
         // 클라이언트와 데이터 통신
 
-        if (GameState == Robby)
+        if (GameState == Robby || GameState == InGame)
         {
-            //WaitForSingleObject(hRecvEvent, INFINITE);
             retval = m_SF.recvn(client_sock, (char*)&Recv_P, sizeof(InputPacket), 0);
             if (retval == SOCKET_ERROR) {
                 m_SF.err_display("recv()");
                 break;
             }
-            if (Recv_P.type == ready) {
-                Ready[Thread_idx] = TRUE;
-                printf("Recv %d번: [%d] S<-C: %d = 시작 신호\n", client_ID[Thread_idx], ntohs(clientaddr.sin_port), Recv_P.type);
-                m_PF.InitPacket(&Recv_P);
-            }
-
-        }
-        if (GameState == InGame)
-        {
-            //WaitForSingleObject(hRecvEvent, INFINITE);
-            retval = m_SF.recvn(client_sock, (char*)&Recv_P, sizeof(InputPacket), 0);
-            if (retval == SOCKET_ERROR) {
-                m_SF.err_display("recv()");
-                break;
-            }
-            printf("Recv %d번:[%d] S<-C: type = %d %d %d\n", client_ID[Thread_idx], ntohs(clientaddr.sin_port),
-                Recv_P.type, Recv_P.x, Recv_P.y);
-
-            // 게임이 종료되도 다른 스레드는 여기일수도 있음..
-            if (Recv_P.type == ready) {
-                Ready[Thread_idx] = TRUE;
-                printf("Recv %d번: [%d] S<-C: %d = 시작 신호\n", client_ID[Thread_idx], ntohs(clientaddr.sin_port), Recv_P.type);
-                m_PF.InitPacket(&Recv_P);
-            }
-
             EnterCriticalSection(&cs);
-            
-            m_PF.InitPacket(&Send_P);
-            Send_P = Recv_P;
-            if (Recv_P.status == Status::DEAD)
-            {
-                Death_count++;
-                if (Thread_Count - Death_count <= 0)
-                    Send_P.type = end;
+            if (Recv_P.type == ready) {
+                printf("Recv %d번: [%d] S<-C: %d = 시작 신호\n", client_ID[Thread_idx], ntohs(clientaddr.sin_port), Recv_P.type);
+                m_PF.InitPacket(&Recv_P);
+                Ready[Thread_idx] = TRUE;
+                printf("%d = %d:%d:%d\n", Thread_idx, Ready[Thread_idx]
+                    , ItemReady[Thread_idx], Game_Over[Thread_idx]);
+                GameState = Gameready;
+                m_PF.InitPacket(&Send_P);
+                m_PF.InitPacket(&Recv_P);
+                for (int i = 0; i < MAX_CLIENT; i++)
+                    if (ThreadOn[i])
+                        SetEvent(hSendEvent[i]);
             }
-            m_PF.InitPacket(&Recv_P);
-
-            for (int i = 0; i < MAX_CLIENT; i++)
-                if (ThreadOn[i])
-                    SetEvent(hSendEvent[i]);
+            else
+            {
+                printf("Recv %d번:[%d] S<-C: type = %d %d %d\n", client_ID[Thread_idx], ntohs(clientaddr.sin_port),
+                    Recv_P.type, Recv_P.x, Recv_P.y);
+                m_PF.InitPacket(&Send_P);
+                Send_P = Recv_P;
+                if (Recv_P.status == Status::DEAD)
+                {
+                    Death_count++;
+                    if (Thread_Count - Death_count <= 0)
+                        Send_P.type = end;
+                }
+                for (int i = 0; i < MAX_CLIENT; i++)
+                    if (ThreadOn[i])
+                        SetEvent(hSendEvent[i]);
+                m_PF.InitPacket(&Recv_P);
+            }
             LeaveCriticalSection(&cs);
-
-            /*if (!ThreadOn[0] || !ThreadOn[1])
-                break;*/
         }
 
     }
@@ -348,7 +343,7 @@ int main(int argc, char* argv[])
 
     for (int i = 0; i < MAX_CLIENT;i++)
         hSendEvent[i] = CreateEvent(NULL, TRUE, TRUE, NULL);
-    hRecvEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    hRecvEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
 
     InitializeCriticalSection(&cs);
 
@@ -365,13 +360,6 @@ int main(int argc, char* argv[])
             else
             {
                 Thread_Count++;
-                // 종료 후 다시 실행시 먼저 만들어진 쓰레드 확인
-                for (int i = Thread_Count; i < MAX_CLIENT; i++)
-                {
-                    if (ThreadOn[Thread_Count])
-                        Thread_Count++;
-                }
-
                 // 접속한 클라이언트 정보 출력
                 printf("\n[TCP 서버] %d번 클라이언트 접속: IP 주소=%s, 포트 번호=%d\n",
                     Thread_Count + 1, inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
