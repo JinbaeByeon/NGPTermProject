@@ -194,7 +194,7 @@ DWORD WINAPI RecvClient(LPVOID arg)
                 }
                 else {
                     Player[Recv_Player_Packet->idx_player].left = Recv_Player_Packet->x;
-                    Player[Recv_Player_Packet->idx_player].right = Player[Client_Idx].left + Player_CX;
+                    Player[Recv_Player_Packet->idx_player].right = Recv_Player_Packet->x + Player_CX;
                     Player[Recv_Player_Packet->idx_player].top = Recv_Player_Packet->y;
                     Player[Recv_Player_Packet->idx_player].bottom = Recv_Player_Packet->y + Player_CY;
                     if (Recv_Player_Packet->status == Status::STOP)
