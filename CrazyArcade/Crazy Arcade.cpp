@@ -276,7 +276,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM  lParam)
 		SetTimer(hwnd, Bubble_BfBoom, 100, (TIMERPROC)TimeProc_Bubble_BfBoom);   // 물풍선 애니메이션
 
 		for (int i = 0; i < MAX_PLAYER; ++i) {
-			Player_Speed[i] = 35;
+			Player_Speed[i] = 40;
 			Player_bCount[i] = 1;
 			Power[i] = 1;
 		}
@@ -1162,7 +1162,6 @@ void CALLBACK TimeProc_P1_Move(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
 	RECT tmpRECT = Player[Client_Idx];
 	RECT rc;
-
 	switch (yPos_Player[Client_Idx]) {
 	case LEFT:
 		if (tmpRECT.left >= StartX + 10) {

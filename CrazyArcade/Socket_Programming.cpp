@@ -287,7 +287,7 @@ DWORD WINAPI RecvClient(LPVOID arg)
                 for (int i = 0; i < nPlayer; ++i)
                     Player_Live[i] = true;
                 for (int i = 0; i < MAX_PLAYER; ++i) {
-                    Player_Speed[i] = 35;
+                    Player_Speed[i] = 40;
                     Player_bCount[i] = 1;
                     Power[i] = 1;
                     bDie[i] = FALSE;
